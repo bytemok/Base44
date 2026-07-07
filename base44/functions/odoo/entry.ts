@@ -118,18 +118,90 @@ Deno.serve(async (req) => {
     } else if (resource === "recepciones") {
       const r = await searchRead(
         "stock.picking",
-        [["picking_type_code", "=", "incoming"], ["state", "!=", "done"]],
-        ["name", "partner_id", "scheduled_date", "state", "origin", "location_id"],
-        "scheduled_date desc"
+        [["picking_type_code", "=", "incoming"], ["state", "in", ["confirmed", "assigned"]]],
+        ["id", "name", "origin", "partner_id", "scheduled_date", "state", "location_id"],
+        "scheduled_date desc",
+        100
       );
+      const pids = r.map((p) => p.id);
+      let moveMap = {};
+      if (pids.length) {
+        const moves = await searchRead(
+          "stock.move",
+          [["picking_id", "in", pids], ["state", "!=", "done"]],
+          ["id", "product_id", "product_qty", "product_uom", "picking_id"],
+          null,
+          500
+        );
+        moves.forEach((m) => {
+          const pid = Array.isArray(m.picking_id) ? m.picking_id[0] : null;
+          if (!pid) return;
+          (moveMap[pid] = moveMap[pid] || []).push({
+            producto: m2o(m.product_id),
+            qty: m.product_qty || 0,
+            uom: m2o(m.product_uom),
+          });
+        });
+      }
+      const origenes = r.map((p) => p.origin).filter(Boolean);
+      const orderByName = {};
+      const poByName = {};
+      if (origenes.length) {
+        try {
+          const sos = await searchRead("sale.order", [["name", "in", origenes]], ["id", "name"], null, 100);
+          sos.forEach((s) => (orderByName[s.name] = s.id));
+        } catch (e) {}
+        try {
+          const pos = await searchRead("purchase.order", [["name", "in", origenes]], ["id", "name"], null, 100);
+          pos.forEach((s) => (poByName[s.name] = s.id));
+        } catch (e) {}
+      }
       rows = r.map((p) => ({
+        picking_id: p.id,
         referencia: p.name || "",
+        origen: p.origin || "",
+        order_id: orderByName[p.origin] || null,
+        po_id: poByName[p.origin] || null,
         proveedor: m2o(p.partner_id),
         fecha: p.scheduled_date ? p.scheduled_date.slice(0, 16).replace("T", " ") : "",
         estado: p.state || "",
-        origen: p.origin || "",
         ubicacion: m2o(p.location_id),
+        productos: moveMap[p.id] || [],
       }));
+      extra.odoo_url = ODOO_URL;
+    } else if (resource === "recibir_pickings") {
+      const ids = Array.isArray(body.ids) ? body.ids.map(Number).filter(Boolean) : [];
+      if (!ids.length) return Response.json({ error: "Faltan ids" }, { status: 400 });
+      const ok = [];
+      const fallidos = [];
+      for (const pid of ids) {
+        try {
+          const moves = await searchRead("stock.move", [["picking_id", "=", pid], ["state", "!=", "done"]], ["id", "product_id", "product_uom", "product_qty", "location_id", "location_dest_id"], null, 200);
+          for (const m of moves) {
+            const demand = m.product_qty || 0;
+            const lines = await searchRead("stock.move.line", [["move_id", "=", m.id]], ["id"], null, 50);
+            if (lines.length) {
+              for (const ln of lines) {
+                await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.move.line", "write", [[ln.id], { quantity: demand }]] });
+              }
+            } else {
+              await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.move.line", "create", [{ move_id: m.id, picking_id: pid, product_id: Array.isArray(m.product_id) ? m.product_id[0] : m.product_id, product_uom_id: Array.isArray(m.product_uom) ? m.product_uom[0] : m.product_uom, quantity: demand, location_id: Array.isArray(m.location_id) ? m.location_id[0] : m.location_id, location_dest_id: Array.isArray(m.location_dest_id) ? m.location_dest_id[0] : m.location_dest_id }]] });
+            }
+          }
+          const res = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.picking", "button_validate", [[pid]]] });
+          if (res && typeof res === "object" && res.res_model === "stock.immediate.transfer") {
+            const wizId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.immediate.transfer", "create", [{ pick_ids: [[6, 0, [pid]]] }]] });
+            await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.immediate.transfer", "process", [wizId]] });
+          } else if (res && typeof res === "object" && res.res_model === "stock.backorder.confirmation") {
+            const wizId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.backorder.confirmation", "create", [{ pick_ids: [[6, 0, [pid]]] }]] });
+            await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.backorder.confirmation", "process", [wizId]] });
+          }
+          ok.push(pid);
+        } catch (e) {
+          fallidos.push({ id: pid, error: e.message || String(e) });
+        }
+      }
+      return Response.json({ resource: "recibir_pickings", ok, fallidos });
     } else if (resource === "facturas") {
       const r = await searchRead(
         "account.move",
