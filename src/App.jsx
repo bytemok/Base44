@@ -12,7 +12,8 @@ import Dashboard from '@/pages/Dashboard';
 import Ventas from '@/pages/Ventas';
 import Clientes from '@/pages/Clientes';
 import Productos from '@/pages/Productos';
-import Entregas from '@/pages/Entregas';
+import PedidosCoordinar from '@/pages/PedidosCoordinar';
+import CalendarioEntregas from '@/pages/CalendarioEntregas';
 import Recepciones from '@/pages/Recepciones';
 import Facturas from '@/pages/Facturas';
 import ErpLayout from '@/components/erp/Layout';
@@ -52,7 +53,8 @@ const AuthenticatedApp = () => {
           <Route path="/ventas" element={<Ventas />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/productos" element={<Productos />} />
-          <Route path="/entregas" element={<Entregas />} />
+          <Route path="/coordinar" element={<PedidosCoordinar />} />
+          <Route path="/calendario" element={<CalendarioEntregas />} />
           <Route path="/recepciones" element={<Recepciones />} />
           <Route path="/facturas" element={<Facturas />} />
         </Route>

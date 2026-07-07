@@ -1,9 +1,10 @@
-import { LayoutDashboard, ShoppingCart, Truck, Inbox, Package, Users, Receipt } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, CalendarDays, Inbox, Package, Users, Receipt } from "lucide-react";
 
 export const MODULES = [
   { slug: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "Operación", path: "/" },
   { slug: "ventas", label: "Ventas", icon: ShoppingCart, section: "Operación", path: "/ventas" },
-  { slug: "entregas", label: "Entregas", icon: Truck, section: "Operación", path: "/entregas" },
+  { slug: "coordinar", label: "Pedidos a coordinar", icon: ClipboardList, section: "Operación", path: "/coordinar" },
+  { slug: "calendario", label: "Calendario de Entregas", icon: CalendarDays, section: "Operación", path: "/calendario" },
   { slug: "recepciones", label: "Recepciones", icon: Inbox, section: "Operación", path: "/recepciones" },
   { slug: "productos", label: "Productos", icon: Package, section: "Catálogo", path: "/productos" },
   { slug: "clientes", label: "Clientes", icon: Users, section: "Catálogo", path: "/clientes" },

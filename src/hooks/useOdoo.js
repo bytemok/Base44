@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 
 export function useOdoo(resource, limit) {
   const [data, setData] = useState([]);
+  const [meta, setMeta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -12,6 +13,7 @@ export function useOdoo(resource, limit) {
     try {
       const res = await base44.functions.invoke("odoo", { resource, limit });
       setData(res.data?.data || []);
+      setMeta(res.data || null);
     } catch (e) {
       setError(e?.response?.data?.error || e.message || "Error");
     } finally {
@@ -23,5 +25,5 @@ export function useOdoo(resource, limit) {
     load();
   }, [load]);
 
-  return { data, loading, error, reload: load };
+  return { data, meta, loading, error, reload: load };
 }

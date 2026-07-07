@@ -48,8 +48,10 @@ Deno.serve(async (req) => {
     };
 
     const m2o = (v) => (Array.isArray(v) ? v[1] : v || "");
+    const reportUrl = (report, ids) => `${ODOO_URL}/report/pdf/${report}/${ids.join(",")}`;
 
     let rows = [];
+    let extra = {};
     if (resource === "pedidos") {
       const r = await searchRead(
         "sale.order",
@@ -144,11 +146,129 @@ Deno.serve(async (req) => {
         estado: f.state || "",
         pago: f.payment_state || "",
       }));
+    } else if (resource === "ventas") {
+      const orders = await searchRead(
+        "sale.order",
+        [["state", "=", "sale"]],
+        ["id", "name", "partner_id", "date_order", "amount_total", "picking_ids", "invoice_ids"],
+        "date_order desc",
+        200
+      );
+      const allPickingIds = [];
+      orders.forEach((o) => (o.picking_ids || []).forEach((pid) => allPickingIds.push(pid)));
+      const pickingState = {};
+      if (allPickingIds.length) {
+        const picks = await searchRead("stock.picking", [["id", "in", allPickingIds]], ["id", "state"], null, 200);
+        picks.forEach((p) => (pickingState[p.id] = p.state));
+      }
+      rows = orders
+        .map((o) => {
+          const pids = o.picking_ids || [];
+          const states = pids.map((id) => pickingState[id] || "draft");
+          const delivered = pids.length > 0 && states.every((s) => s === "done");
+          return {
+            db_id: o.id,
+            id: o.name,
+            cliente: m2o(o.partner_id),
+            fecha: o.date_order ? o.date_order.slice(0, 10) : "",
+            total: o.amount_total || 0,
+            picking_ids: pids,
+            invoice_ids: o.invoice_ids || [],
+            transferencias: pids.length,
+            entregado: delivered,
+            sin_entregar: !delivered,
+          };
+        })
+        .filter((r) => r.sin_entregar);
+      extra.odoo_url = ODOO_URL;
+    } else if (resource === "detalle") {
+      const orderId = Number(body.order_id);
+      if (!orderId) return Response.json({ error: "Falta order_id" }, { status: 400 });
+      const [o] = await searchRead(
+        "sale.order",
+        [["id", "=", orderId]],
+        ["id", "name", "partner_id", "partner_shipping_id", "date_order", "amount_total", "amount_untaxed", "amount_tax", "state", "invoice_status", "payment_term_id", "client_order_ref", "user_id", "carrier_id", "note", "picking_ids", "invoice_ids"],
+        null,
+        1
+      );
+      if (!o) return Response.json({ error: "Pedido no encontrado" }, { status: 404 });
+      let lines = [];
+      try {
+        lines = await searchRead(
+          "sale.order.line",
+          [["order_id", "=", orderId]],
+          ["product_id", "name", "product_uom_qty", "qty_delivered", "qty_invoiced", "price_unit", "price_subtotal", "discount"],
+          "sequence",
+          200
+        );
+      } catch (e) {}
+      const pids = o.picking_ids || [];
+      const iids = o.invoice_ids || [];
+      let pickings = [];
+      if (pids.length) {
+        pickings = await searchRead("stock.picking", [["id", "in", pids]], ["name", "scheduled_date", "state", "location_dest_id", "origin"], null, 50);
+      }
+      let invoices = [];
+      if (iids.length) {
+        invoices = await searchRead("account.move", [["id", "in", iids]], ["name", "invoice_date", "amount_total", "amount_residual", "state", "payment_state"], null, 50);
+      }
+      return Response.json({
+        resource: "detalle",
+        data: {
+          order: {
+            name: o.name,
+            cliente: m2o(o.partner_id),
+            entrega_a: m2o(o.partner_shipping_id),
+            fecha: o.date_order ? o.date_order.slice(0, 10) : "",
+            total: o.amount_total || 0,
+            base: o.amount_untaxed || 0,
+            impuestos: o.amount_tax || 0,
+            estado: o.state || "",
+            facturacion: o.invoice_status || "",
+            plazo_pago: m2o(o.payment_term_id),
+            ref_cliente: o.client_order_ref || "",
+            vendedor: m2o(o.user_id),
+            transporte: m2o(o.carrier_id),
+            notas: o.note || "",
+          },
+          lines: lines.map((l) => ({
+            producto: m2o(l.product_id),
+            descripcion: l.name,
+            cantidad: l.product_uom_qty || 0,
+            entregado: l.qty_delivered || 0,
+            facturado: l.qty_invoiced || 0,
+            precio: l.price_unit || 0,
+            subtotal: l.price_subtotal || 0,
+            descuento: l.discount || 0,
+          })),
+          pickings: pickings.map((p) => ({
+            nombre: p.name,
+            fecha: p.scheduled_date ? p.scheduled_date.slice(0, 16).replace("T", " ") : "",
+            estado: p.state,
+            destino: m2o(p.location_dest_id),
+            origen: p.origin || "",
+          })),
+          invoices: invoices.map((i) => ({
+            numero: i.name,
+            fecha: i.invoice_date || "",
+            total: i.amount_total || 0,
+            saldo: i.amount_residual || 0,
+            estado: i.state,
+            pago: i.payment_state,
+          })),
+          print: {
+            factura: iids.length ? reportUrl("account.report_invoice_with_payments", iids) : null,
+            remito: pids.length ? reportUrl("stock.report_picking", pids) : null,
+            etiquetas: pids.length ? reportUrl("stock.report_delivery_label", pids) : null,
+            orden_venta: reportUrl("sale.report_saleorder", [orderId]),
+          },
+        },
+      });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }
 
-    return Response.json({ resource, count: rows.length, data: rows });
+    return Response.json({ resource, count: rows.length, data: rows, ...extra });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

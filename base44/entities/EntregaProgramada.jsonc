@@ -1,0 +1,49 @@
+{
+  "name": "EntregaProgramada",
+  "type": "object",
+  "properties": {
+    "order_ref": {
+      "type": "string",
+      "description": "N\u00famero de la orden de venta en Odoo (ej. S07400)"
+    },
+    "cliente": {
+      "type": "string"
+    },
+    "total": {
+      "type": "number"
+    },
+    "fecha_entrega": {
+      "type": "string",
+      "format": "date"
+    },
+    "odoo_order_id": {
+      "type": "number",
+      "description": "ID interno de sale.order en Odoo"
+    },
+    "invoice_ids": {
+      "type": "string",
+      "description": "JSON array de IDs de facturas (account.move)"
+    },
+    "picking_ids": {
+      "type": "string",
+      "description": "JSON array de IDs de transferencias (stock.picking)"
+    },
+    "notas": {
+      "type": "string"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "Programada",
+        "Entregada"
+      ],
+      "default": "Programada"
+    }
+  },
+  "required": [
+    "order_ref",
+    "cliente",
+    "fecha_entrega",
+    "estado"
+  ]
+}
