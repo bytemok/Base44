@@ -56,6 +56,18 @@ export default function CalendarioEntregas() {
 
   const programadas = useMemo(() => recs.filter((r) => r.estado === "Programada"), [recs]);
 
+  // Solo entregas listas para entregar (stock disponible / entradas validadas en Odoo)
+  const listoMap = useMemo(() => {
+    const m = {};
+    sinEntregar.forEach((s) => { m[s.id] = !!s.listo; });
+    return m;
+  }, [sinEntregar]);
+
+  const visibles = useMemo(() => {
+    if (sinLoading || sinError) return programadas;
+    return programadas.filter((r) => listoMap[r.order_ref]);
+  }, [programadas, listoMap, sinLoading, sinError]);
+
   const toggle = (id) =>
     setSelected((prev) => {
       const n = new Set(prev);
@@ -66,11 +78,11 @@ export default function CalendarioEntregas() {
 
   const allInvoiceIds = useMemo(() => {
     const ids = [];
-    programadas.forEach((r) => {
+    visibles.forEach((r) => {
       if (selected.has(r.id)) safeParse(r.invoice_ids).forEach((i) => ids.push(i));
     });
     return ids;
-  }, [programadas, selected]);
+  }, [visibles, selected]);
 
   const printMasivo = () => {
     if (!allInvoiceIds.length || !odooUrl) return;
@@ -82,13 +94,13 @@ export default function CalendarioEntregas() {
 
   const grouped = useMemo(() => {
     const m = {};
-    programadas.forEach((r) => {
+    visibles.forEach((r) => {
       (m[r.fecha_entrega] = m[r.fecha_entrega] || []).push(r);
     });
     return Object.keys(m)
       .sort()
       .map((k) => ({ fecha: k, items: m[k] }));
-  }, [programadas]);
+  }, [visibles]);
 
   return (
     <div className="space-y-5">
@@ -96,7 +108,7 @@ export default function CalendarioEntregas() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Calendario de Entregas</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Entregas programadas · {programadas.length} pendientes
+            Entregas listas para entregar · {visibles.length} pendientes
           </p>
         </div>
         <button
@@ -112,10 +124,10 @@ export default function CalendarioEntregas() {
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-800" />
         </div>
-      ) : programadas.length === 0 ? (
+      ) : visibles.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-slate-400">
           <CalendarDays className="h-8 w-8" />
-          <p className="text-sm">No hay entregas programadas</p>
+          <p className="text-sm">No hay entregas listas para entregar</p>
         </div>
       ) : (
         <div className="space-y-5">
