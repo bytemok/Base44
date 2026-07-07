@@ -177,6 +177,7 @@ Deno.serve(async (req) => {
             transferencias: pids.length,
             entregado: delivered,
             sin_entregar: !delivered,
+            listo: states.some((s) => s === "assigned"),
           };
         })
         .filter((r) => r.sin_entregar);

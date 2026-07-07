@@ -29,7 +29,10 @@ export default function PedidosCoordinar() {
   }, [loadCoord]);
 
   const yaCoordinados = useMemo(() => new Set(coordinadas.map((c) => c.order_ref)), [coordinadas]);
-  const pendientes = useMemo(() => data.filter((r) => !yaCoordinados.has(r.id)), [data, yaCoordinados]);
+  const pendientes = useMemo(
+    () => data.filter((r) => !yaCoordinados.has(r.id) && r.listo),
+    [data, yaCoordinados]
+  );
 
   const coordinar = async (r) => {
     const fecha = fechas[r.id] || defaultDate();
@@ -56,7 +59,7 @@ export default function PedidosCoordinar() {
       <div>
         <h1 className="text-2xl font-semibold text-slate-900">Pedidos a coordinar</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Asigná fecha de entrega para moverlos al Calendario de Entregas
+          Pedidos con entradas validadas y stock disponible, listos para entregar
         </p>
       </div>
 
@@ -69,7 +72,7 @@ export default function PedidosCoordinar() {
       ) : pendientes.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-slate-400">
           <ClipboardList className="h-8 w-8" />
-          <p className="text-sm">No hay pedidos pendientes de coordinación 🎉</p>
+          <p className="text-sm">No hay pedidos listos para coordinar</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -81,7 +84,7 @@ export default function PedidosCoordinar() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-medium text-slate-500">{r.id}</span>
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Pendiente</span>
+                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">Listo para entregar</span>
                 </div>
                 <p className="mt-1 truncate font-medium text-slate-900">{r.cliente}</p>
                 <p className="text-xs text-slate-500">
