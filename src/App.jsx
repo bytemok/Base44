@@ -9,7 +9,6 @@ import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Pedidos from '@/pages/Pedidos';
 import Dashboard from '@/pages/Dashboard';
-import Modulo from '@/pages/Modulo';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -44,7 +43,6 @@ const AuthenticatedApp = () => {
         <Route element={<ErpLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/pedidos" element={<Pedidos />} />
-          <Route path="/modulo/:modulo" element={<Modulo />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

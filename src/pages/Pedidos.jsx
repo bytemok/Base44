@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Plus, Pencil, Trash2, Package, Search, ChevronDown } from "lucide-react";
 import StatusBadge, { STATUS_ORDER } from "@/components/pedidos/StatusBadge";
@@ -28,6 +29,17 @@ export default function Pedidos() {
   useEffect(() => {
     loadPedidos();
   }, []);
+
+  // "Nueva Venta" abre el formulario automáticamente
+  const location = useLocation();
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("nuevo") === "1" && !formOpen) {
+      setEditing(null);
+      setFormOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   const filtered = useMemo(() => {
     let list = [...pedidos];

@@ -5,9 +5,16 @@ import { MODULES, SECTIONS } from "./modules";
 
 export default function Sidebar({ open, onClose }) {
   const location = useLocation();
-  const isActive = (path) =>
-    location.pathname === path ||
-    (path !== "/" && location.pathname.startsWith(path));
+  const isActive = (path) => {
+    const [base, query] = path.split("?");
+    if (query) {
+      // módulo con query (ej. Nueva Venta): activo solo si coincide el parámetro
+      const params = new URLSearchParams(location.search);
+      const q = new URLSearchParams(query);
+      return location.pathname === base && [...q.keys()].every((k) => params.get(k) === q.get(k));
+    }
+    return location.pathname === base || (base !== "/" && location.pathname.startsWith(base));
+  };
 
   return (
     <>
