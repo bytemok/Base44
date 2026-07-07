@@ -49,32 +49,55 @@ Deno.serve(async (req) => {
 
     const m2o = (v) => (Array.isArray(v) ? v[1] : v || "");
     const reportUrl = (report, ids) => `${ODOO_URL}/report/pdf/${report}/${ids.join(",")}`;
-    // Resuelve atributos (atributo → valor) para una lista de ids de product.product (variantes)
+    // Resuelve una lista de ids de product.template.attribute.value a {atributo, valor}
+    const resolvePtavs = async (ptavIds) => {
+      const res = {};
+      if (!ptavIds.length) return res;
+      const ptavs = await searchRead("product.template.attribute.value", [["id", "in", ptavIds]], ["id", "product_attribute_value_id"], null, 300);
+      const pavIds = [];
+      const ptavPav = {};
+      ptavs.forEach((p) => { const pavId = Array.isArray(p.product_attribute_value_id) ? p.product_attribute_value_id[0] : null; ptavPav[p.id] = pavId; if (pavId) pavIds.push(pavId); });
+      const pavMap = {}, attrMap = {};
+      if (pavIds.length) {
+        const pavs = await searchRead("product.attribute.value", [["id", "in", pavIds]], ["id", "name", "attribute_id"], null, 300);
+        const attrIds = [];
+        pavs.forEach((p) => { const aId = Array.isArray(p.attribute_id) ? p.attribute_id[0] : null; pavMap[p.id] = { nombre: p.name || "", attrId: aId }; if (aId) attrIds.push(aId); });
+        if (attrIds.length) { const attrs = await searchRead("product.attribute", [["id", "in", attrIds]], ["id", "name"], null, 300); attrs.forEach((a) => (attrMap[a.id] = a.name || "")); }
+      }
+      ptavIds.forEach((id) => { const pv = pavMap[ptavPav[id] || 0] || {}; res[id] = { atributo: attrMap[pv.attrId] || "", valor: pv.nombre || "" }; });
+      return res;
+    };
+
+    // Atributos de variante (product.product -> product_template_attribute_value_ids)
     const loadVariantAttrs = async (productIds) => {
       const map = {};
       if (!productIds.length) return map;
       const prods = await searchRead("product.product", [["id", "in", productIds]], ["id", "product_template_attribute_value_ids"], null, 300);
-      const ptavIds = [];
-      prods.forEach((p) => (p.product_template_attribute_value_ids || []).forEach((id) => ptavIds.push(id)));
-      const ptavMap = {}, pavMap = {}, attrMap = {};
-      if (ptavIds.length) {
-        const ptavs = await searchRead("product.template.attribute.value", [["id", "in", ptavIds]], ["id", "product_attribute_value_id"], null, 300);
-        const pavIds = [];
-        ptavs.forEach((p) => { const pavId = Array.isArray(p.product_attribute_value_id) ? p.product_attribute_value_id[0] : null; ptavMap[p.id] = pavId; if (pavId) pavIds.push(pavId); });
-        if (pavIds.length) {
-          const pavs = await searchRead("product.attribute.value", [["id", "in", pavIds]], ["id", "name", "attribute_id"], null, 300);
-          const attrIds = [];
-          pavs.forEach((p) => { const aId = Array.isArray(p.attribute_id) ? p.attribute_id[0] : null; pavMap[p.id] = { nombre: p.name || "", attrId: aId }; if (aId) attrIds.push(aId); });
-          if (attrIds.length) { const attrs = await searchRead("product.attribute", [["id", "in", attrIds]], ["id", "name"], null, 300); attrs.forEach((a) => (attrMap[a.id] = a.name || "")); }
-        }
-      }
+      const allPtavIds = [];
+      prods.forEach((p) => (p.product_template_attribute_value_ids || []).forEach((id) => allPtavIds.push(id)));
+      const ptavRes = await resolvePtavs(allPtavIds);
       prods.forEach((p) => {
-        map[p.id] = (p.product_template_attribute_value_ids || []).map((id) => {
-          const pv = pavMap[ptavMap[id] || 0] || {};
-          return { atributo: attrMap[pv.attrId] || "", valor: pv.nombre || "" };
-        });
+        map[p.id] = (p.product_template_attribute_value_ids || []).map((id) => ptavRes[id] || { atributo: "", valor: "" }).filter((x) => x.atributo || x.valor);
       });
       return map;
+    };
+
+    // Atributos no-variante (p.ej. Patas) tomados de la línea de venta/compra que originó el movimiento
+    const loadNoVariantAttrs = async (saleLineIds, purchaseLineIds) => {
+      const res = {};
+      const collect = async (model, ids, key) => {
+        if (!ids.length) return;
+        const lines = await searchRead(model, [["id", "in", ids]], ["id", "product_no_variant_attribute_value_ids"], null, 200);
+        const allPtav = [];
+        lines.forEach((l) => (l.product_no_variant_attribute_value_ids || []).forEach((id) => allPtav.push(id)));
+        const ptavRes = await resolvePtavs(allPtav);
+        lines.forEach((l) => {
+          res[key + ":" + l.id] = (l.product_no_variant_attribute_value_ids || []).map((id) => ptavRes[id] || { atributo: "", valor: "" }).filter((x) => x.atributo || x.valor);
+        });
+      };
+      await collect("sale.order.line", saleLineIds, "sale");
+      await collect("purchase.order.line", purchaseLineIds, "purchase");
+      return res;
     };
 
     let rows = [];
@@ -159,22 +182,33 @@ Deno.serve(async (req) => {
         const moves = await searchRead(
           "stock.move",
           [["picking_id", "in", pids], ["state", "!=", "done"]],
-          ["id", "product_id", "product_qty", "product_uom", "picking_id"],
+          ["id", "product_id", "product_qty", "product_uom", "picking_id", "sale_line_id", "purchase_line_id"],
           null,
           500
         );
-        const prodIds = [];
-        moves.forEach((m) => { const id = Array.isArray(m.product_id) ? m.product_id[0] : null; if (id) prodIds.push(id); });
+        const prodIds = [], saleLineIds = [], purchaseLineIds = [];
+        moves.forEach((m) => {
+          const id = Array.isArray(m.product_id) ? m.product_id[0] : null;
+          if (id) prodIds.push(id);
+          const sl = Array.isArray(m.sale_line_id) ? m.sale_line_id[0] : null;
+          if (sl) saleLineIds.push(sl);
+          const pl = Array.isArray(m.purchase_line_id) ? m.purchase_line_id[0] : null;
+          if (pl) purchaseLineIds.push(pl);
+        });
         const attrMap = await loadVariantAttrs(prodIds);
+        const noVarMap = await loadNoVariantAttrs(saleLineIds, purchaseLineIds);
         moves.forEach((m) => {
           const pid = Array.isArray(m.picking_id) ? m.picking_id[0] : null;
           const prodId = Array.isArray(m.product_id) ? m.product_id[0] : null;
           if (!pid) return;
+          const sl = Array.isArray(m.sale_line_id) ? m.sale_line_id[0] : null;
+          const pl = Array.isArray(m.purchase_line_id) ? m.purchase_line_id[0] : null;
+          const noVar = (sl && noVarMap["sale:" + sl]) || (pl && noVarMap["purchase:" + pl]) || [];
           (moveMap[pid] = moveMap[pid] || []).push({
             producto: m2o(m.product_id),
             qty: m.product_qty || 0,
             uom: m2o(m.product_uom),
-            atributos: attrMap[prodId] || [],
+            atributos: [...(attrMap[prodId] || []), ...noVar],
           });
         });
       }
@@ -218,22 +252,33 @@ Deno.serve(async (req) => {
         const moves = await searchRead(
           "stock.move",
           [["picking_id", "in", pids], ["state", "!=", "done"]],
-          ["id", "product_id", "product_qty", "product_uom", "picking_id"],
+          ["id", "product_id", "product_qty", "product_uom", "picking_id", "sale_line_id", "purchase_line_id"],
           null,
           500
         );
-        const prodIds = [];
-        moves.forEach((m) => { const id = Array.isArray(m.product_id) ? m.product_id[0] : null; if (id) prodIds.push(id); });
+        const prodIds = [], saleLineIds = [], purchaseLineIds = [];
+        moves.forEach((m) => {
+          const id = Array.isArray(m.product_id) ? m.product_id[0] : null;
+          if (id) prodIds.push(id);
+          const sl = Array.isArray(m.sale_line_id) ? m.sale_line_id[0] : null;
+          if (sl) saleLineIds.push(sl);
+          const pl = Array.isArray(m.purchase_line_id) ? m.purchase_line_id[0] : null;
+          if (pl) purchaseLineIds.push(pl);
+        });
         const attrMap = await loadVariantAttrs(prodIds);
+        const noVarMap = await loadNoVariantAttrs(saleLineIds, purchaseLineIds);
         moves.forEach((m) => {
           const pid = Array.isArray(m.picking_id) ? m.picking_id[0] : null;
           const prodId = Array.isArray(m.product_id) ? m.product_id[0] : null;
           if (!pid) return;
+          const sl = Array.isArray(m.sale_line_id) ? m.sale_line_id[0] : null;
+          const pl = Array.isArray(m.purchase_line_id) ? m.purchase_line_id[0] : null;
+          const noVar = (sl && noVarMap["sale:" + sl]) || (pl && noVarMap["purchase:" + pl]) || [];
           (moveMap[pid] = moveMap[pid] || []).push({
             producto: m2o(m.product_id),
             qty: m.product_qty || 0,
             uom: m2o(m.product_uom),
-            atributos: attrMap[prodId] || [],
+            atributos: [...(attrMap[prodId] || []), ...noVar],
           });
         });
       }
