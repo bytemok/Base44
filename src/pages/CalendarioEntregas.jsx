@@ -133,15 +133,16 @@ export default function CalendarioEntregas() {
         <div className="space-y-5">
           {grouped.map((g) => (
             <div key={g.fecha}>
-              <div className="mb-2 flex items-center gap-2">
-                <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white">
-                  {new Date(g.fecha + "T00:00:00").toLocaleDateString("es-AR", {
-                    weekday: "long",
-                    day: "2-digit",
-                    month: "long",
-                  })}
+              <div className="mb-3 flex justify-center">
+                <span className="rounded-full bg-[#131722] px-3.5 py-1 text-xs font-medium text-white">
+                  {(() => {
+                    const f = new Date(g.fecha + "T00:00:00");
+                    const wd = f.toLocaleDateString("es-AR", { weekday: "long" });
+                    const d = f.toLocaleDateString("es-AR", { day: "2-digit" });
+                    const m = f.toLocaleDateString("es-AR", { month: "long" });
+                    return `${wd}, ${d} de ${m}`;
+                  })()}
                 </span>
-                <span className="text-xs text-slate-400">{g.items.length} entrega(s)</span>
               </div>
               <div className="space-y-2">
                 {g.items.map((r) => {
