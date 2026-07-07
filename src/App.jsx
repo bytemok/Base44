@@ -1,13 +1,17 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Pedidos from '@/pages/Pedidos';
+import Dashboard from '@/pages/Dashboard';
+import Modulo from '@/pages/Modulo';
+import ErpLayout from '@/components/erp/Layout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -36,7 +40,13 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Add your page Route elements here */}
-      <Route path="/" element={<Pedidos />} />
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<ErpLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/pedidos" element={<Pedidos />} />
+          <Route path="/modulo/:modulo" element={<Modulo />} />
+        </Route>
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

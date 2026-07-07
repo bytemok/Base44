@@ -1,0 +1,62 @@
+import React, { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { MODULES, SECTIONS } from "@/components/erp/modules";
+
+function ModuleCard({ module }) {
+  const Icon = module.icon;
+  return (
+    <Link
+      to={module.path}
+      className="group relative flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-emerald-200 hover:shadow-md"
+    >
+      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-600 transition group-hover:bg-emerald-50 group-hover:text-emerald-600">
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-slate-800">{module.label}</p>
+        {module.badge != null && (
+          <span className="mt-1 inline-flex items-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
+            {module.badge}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+export default function Dashboard() {
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Buenos días";
+    if (h < 20) return "Buenas tardes";
+    return "Buenas noches";
+  }, []);
+
+  return (
+    <div className="space-y-8">
+      {/* Saludo */}
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">
+          {greeting} 👋
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Elegí un módulo para empezar.
+        </p>
+      </div>
+
+      {/* Secciones de módulos */}
+      {SECTIONS.map((section) => (
+        <section key={section}>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            {section}
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {MODULES.filter((m) => m.section === section).map((m) => (
+              <ModuleCard key={m.slug} module={m} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}

@@ -126,35 +126,28 @@ export default function Pedidos() {
   }, [pedidos]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white">
-              <Package className="h-5 w-5" />
-            </div>
-            <div>
-              <h1 className="text-lg font-semibold leading-tight text-slate-900">
-                Gestor de Pedidos
-              </h1>
-              <p className="text-xs text-slate-500">
-                Seguimiento y cumplimiento de órdenes
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={openAdd}
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 active:scale-[0.98] sm:px-4"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Agregar pedido</span>
-            <span className="sm:hidden">Agregar</span>
-          </button>
+    <div className="space-y-6">
+      {/* Encabezado de página */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Ventas y Pedidos
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Seguimiento y cumplimiento de órdenes · sincronizado con Odoo
+          </p>
         </div>
-      </header>
+        <button
+          onClick={openAdd}
+          className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-emerald-600 active:scale-[0.98] sm:px-4"
+        >
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Agregar pedido</span>
+          <span className="sm:hidden">Agregar</span>
+        </button>
+      </div>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <div>
         {/* Filtros */}
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-1.5">
@@ -362,7 +355,7 @@ export default function Pedidos() {
             ))
           )}
         </div>
-      </main>
+      </div>
 
       <PedidoForm
         open={formOpen}
