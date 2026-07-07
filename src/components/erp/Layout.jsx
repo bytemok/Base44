@@ -14,7 +14,7 @@ export default function Layout() {
     <div className="min-h-screen bg-[#F4F4F4]">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="md:pl-64">
+      <div className="md:pl-20">
         {/* Topbar */}
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md sm:px-6">
           <button

@@ -7,10 +7,10 @@ function ModuleCard({ module }) {
   return (
     <Link
       to={module.path}
-      className="group relative flex flex-col items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-emerald-200 hover:shadow-md"
+      className="group flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition hover:border-emerald-200 hover:shadow-md"
     >
-      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-600 transition group-hover:bg-emerald-50 group-hover:text-emerald-600">
-        <Icon className="h-5 w-5" />
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-600 transition group-hover:bg-emerald-50 group-hover:text-emerald-600">
+        <Icon className="h-6 w-6" />
       </div>
       <p className="text-sm font-medium text-slate-800">{module.label}</p>
     </Link>
