@@ -212,6 +212,13 @@ Deno.serve(async (req) => {
           });
         });
       }
+      Object.keys(moveMap).forEach((pid) => {
+        const items = moveMap[pid];
+        const patas = items.filter((m) => /^patas/i.test((m.producto || "").trim()));
+        if (!patas.length) return;
+        const obs = patas.map((m) => `${m.producto} x${m.qty}`).join(" · ");
+        items.forEach((m) => { if (!/^patas/i.test((m.producto || "").trim())) m.observacion = obs; });
+      });
       const origenes = r.map((p) => p.origin).filter(Boolean);
       const orderByName = {};
       const poByName = {};
@@ -282,6 +289,13 @@ Deno.serve(async (req) => {
           });
         });
       }
+      Object.keys(moveMap).forEach((pid) => {
+        const items = moveMap[pid];
+        const patas = items.filter((m) => /^patas/i.test((m.producto || "").trim()));
+        if (!patas.length) return;
+        const obs = patas.map((m) => `${m.producto} x${m.qty}`).join(" · ");
+        items.forEach((m) => { if (!/^patas/i.test((m.producto || "").trim())) m.observacion = obs; });
+      });
       const origenes = r.map((p) => p.origin).filter(Boolean);
       const orderByName = {};
       if (origenes.length) {
@@ -411,6 +425,7 @@ Deno.serve(async (req) => {
       const lineProdIds = [];
       lines.forEach((l) => { const id = Array.isArray(l.product_id) ? l.product_id[0] : null; if (id) lineProdIds.push(id); });
       const lineAttrMap = await loadVariantAttrs(lineProdIds);
+      const _patasObs = lines.filter((l) => /^patas/i.test((l.name || m2o(l.product_id) || "").trim())).map((l) => `${l.name || m2o(l.product_id)} x${l.product_uom_qty || 0}`).join(" · ");
       const pids = o.picking_ids || [];
       const iids = o.invoice_ids || [];
       let pickings = [];
@@ -450,6 +465,7 @@ Deno.serve(async (req) => {
             subtotal: l.price_subtotal || 0,
             descuento: l.discount || 0,
             atributos: lineAttrMap[Array.isArray(l.product_id) ? l.product_id[0] : null] || [],
+            observacion: /^patas/i.test((l.name || "").trim()) ? "" : _patasObs,
           })),
           pickings: pickings.map((p) => ({
             nombre: p.name,
