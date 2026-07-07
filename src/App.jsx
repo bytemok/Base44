@@ -16,7 +16,8 @@ import PedidosCoordinar from '@/pages/PedidosCoordinar';
 import CalendarioEntregas from '@/pages/CalendarioEntregas';
 import Recepciones from '@/pages/Recepciones';
 import PedidosEnviados from '@/pages/PedidosEnviados';
-import Inventario from '@/pages/Inventario';
+import ProductosStock from '@/pages/ProductosStock';
+import Variantes from '@/pages/Variantes';
 import ControlStock from '@/pages/ControlStock';
 import PickInPickOut from '@/pages/PickInPickOut';
 import Facturas from '@/pages/Facturas';
@@ -61,7 +62,8 @@ const AuthenticatedApp = () => {
           <Route path="/calendario" element={<CalendarioEntregas />} />
           <Route path="/recepciones" element={<Recepciones />} />
           <Route path="/enviados" element={<PedidosEnviados />} />
-          <Route path="/inventario" element={<Inventario />} />
+          <Route path="/inventario" element={<ProductosStock />} />
+          <Route path="/variantes" element={<Variantes />} />
           <Route path="/control-stock" element={<ControlStock />} />
           <Route path="/pick" element={<PickInPickOut />} />
           <Route path="/facturas" element={<Facturas />} />
