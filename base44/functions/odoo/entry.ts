@@ -49,6 +49,33 @@ Deno.serve(async (req) => {
 
     const m2o = (v) => (Array.isArray(v) ? v[1] : v || "");
     const reportUrl = (report, ids) => `${ODOO_URL}/report/pdf/${report}/${ids.join(",")}`;
+    // Resuelve atributos (atributo → valor) para una lista de ids de product.product (variantes)
+    const loadVariantAttrs = async (productIds) => {
+      const map = {};
+      if (!productIds.length) return map;
+      const prods = await searchRead("product.product", [["id", "in", productIds]], ["id", "product_template_attribute_value_ids"], null, 300);
+      const ptavIds = [];
+      prods.forEach((p) => (p.product_template_attribute_value_ids || []).forEach((id) => ptavIds.push(id)));
+      const ptavMap = {}, pavMap = {}, attrMap = {};
+      if (ptavIds.length) {
+        const ptavs = await searchRead("product.template.attribute.value", [["id", "in", ptavIds]], ["id", "product_attribute_value_id"], null, 300);
+        const pavIds = [];
+        ptavs.forEach((p) => { const pavId = Array.isArray(p.product_attribute_value_id) ? p.product_attribute_value_id[0] : null; ptavMap[p.id] = pavId; if (pavId) pavIds.push(pavId); });
+        if (pavIds.length) {
+          const pavs = await searchRead("product.attribute.value", [["id", "in", pavIds]], ["id", "name", "attribute_id"], null, 300);
+          const attrIds = [];
+          pavs.forEach((p) => { const aId = Array.isArray(p.attribute_id) ? p.attribute_id[0] : null; pavMap[p.id] = { nombre: p.name || "", attrId: aId }; if (aId) attrIds.push(aId); });
+          if (attrIds.length) { const attrs = await searchRead("product.attribute", [["id", "in", attrIds]], ["id", "name"], null, 300); attrs.forEach((a) => (attrMap[a.id] = a.name || "")); }
+        }
+      }
+      prods.forEach((p) => {
+        map[p.id] = (p.product_template_attribute_value_ids || []).map((id) => {
+          const pv = pavMap[ptavMap[id] || 0] || {};
+          return { atributo: attrMap[pv.attrId] || "", valor: pv.nombre || "" };
+        });
+      });
+      return map;
+    };
 
     let rows = [];
     let extra = {};
@@ -133,13 +160,18 @@ Deno.serve(async (req) => {
           null,
           500
         );
+        const prodIds = [];
+        moves.forEach((m) => { const id = Array.isArray(m.product_id) ? m.product_id[0] : null; if (id) prodIds.push(id); });
+        const attrMap = await loadVariantAttrs(prodIds);
         moves.forEach((m) => {
           const pid = Array.isArray(m.picking_id) ? m.picking_id[0] : null;
+          const prodId = Array.isArray(m.product_id) ? m.product_id[0] : null;
           if (!pid) return;
           (moveMap[pid] = moveMap[pid] || []).push({
             producto: m2o(m.product_id),
             qty: m.product_qty || 0,
             uom: m2o(m.product_uom),
+            atributos: attrMap[prodId] || [],
           });
         });
       }
@@ -275,6 +307,9 @@ Deno.serve(async (req) => {
           200
         );
       } catch (e) {}
+      const lineProdIds = [];
+      lines.forEach((l) => { const id = Array.isArray(l.product_id) ? l.product_id[0] : null; if (id) lineProdIds.push(id); });
+      const lineAttrMap = await loadVariantAttrs(lineProdIds);
       const pids = o.picking_ids || [];
       const iids = o.invoice_ids || [];
       let pickings = [];
@@ -313,6 +348,7 @@ Deno.serve(async (req) => {
             precio: l.price_unit || 0,
             subtotal: l.price_subtotal || 0,
             descuento: l.discount || 0,
+            atributos: lineAttrMap[Array.isArray(l.product_id) ? l.product_id[0] : null] || [],
           })),
           pickings: pickings.map((p) => ({
             nombre: p.name,

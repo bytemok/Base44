@@ -157,9 +157,20 @@ export default function Recepciones() {
                 {r.productos?.length > 0 && (
                   <div className="mt-3 ml-8 divide-y divide-slate-100 rounded-lg border border-slate-100">
                     {r.productos.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-1.5 text-sm">
-                        <span className="truncate text-slate-700">{p.producto}</span>
-                        <span className="ml-3 shrink-0 text-xs font-medium text-slate-500">{p.qty} {p.uom}</span>
+                      <div key={i} className="px-3 py-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="truncate text-sm text-slate-700">{p.producto}</span>
+                          <span className="ml-3 shrink-0 text-xs font-medium text-slate-500">{p.qty} {p.uom}</span>
+                        </div>
+                        {p.atributos?.length > 0 && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {p.atributos.map((a, j) => (
+                              <span key={j} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">
+                                {a.atributo}: {a.valor}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
