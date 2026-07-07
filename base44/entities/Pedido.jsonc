@@ -1,0 +1,47 @@
+{
+  "name": "Pedido",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string",
+      "description": "Identificador legible del pedido, ej. PED-001"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Nombre del cliente"
+    },
+    "order_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del pedido"
+    },
+    "items_description": {
+      "type": "string",
+      "description": "Descripci\u00f3n de los art\u00edculos del pedido"
+    },
+    "total": {
+      "type": "number",
+      "description": "Monto total del pedido"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Nuevo",
+        "En proceso",
+        "Enviado",
+        "Entregado"
+      ],
+      "default": "Nuevo",
+      "description": "Estado del pedido"
+    },
+    "seq": {
+      "type": "number",
+      "description": "Contador secuencial para generar el order_id"
+    }
+  },
+  "required": [
+    "customer_name",
+    "order_date",
+    "status"
+  ]
+}
