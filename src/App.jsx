@@ -17,6 +17,7 @@ import CalendarioEntregas from '@/pages/CalendarioEntregas';
 import Recepciones from '@/pages/Recepciones';
 import PedidosEnviados from '@/pages/PedidosEnviados';
 import Inventario from '@/pages/Inventario';
+import ControlStock from '@/pages/ControlStock';
 import Facturas from '@/pages/Facturas';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
           <Route path="/recepciones" element={<Recepciones />} />
           <Route path="/enviados" element={<PedidosEnviados />} />
           <Route path="/inventario" element={<Inventario />} />
+          <Route path="/control-stock" element={<ControlStock />} />
           <Route path="/facturas" element={<Facturas />} />
         </Route>
       </Route>

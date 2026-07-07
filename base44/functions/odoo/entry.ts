@@ -581,6 +581,52 @@ Deno.serve(async (req) => {
       if (!orderId || !fecha) return Response.json({ error: "Faltan datos" }, { status: 400 });
       await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "sale.order", "write", [[orderId], { commitment_date: fecha + " 00:00:00" }]] });
       return Response.json({ resource: "coordinar_pedido", ok: true });
+    } else if (resource === "control_stock") {
+      const r = await searchRead(
+        "product.product",
+        [["active", "=", true], ["type", "in", ["product", "consu"]]],
+        ["id", "name", "default_code", "barcode", "qty_available"],
+        "name",
+        500
+      );
+      rows = r.map((p) => ({
+        product_id: p.id,
+        nombre: p.name || "",
+        codigo: p.default_code || "",
+        barcode: p.barcode || "",
+        esperado: p.qty_available || 0,
+      }));
+    } else if (resource === "control_stock_aplicar") {
+      const conteo = Array.isArray(body.conteo) ? body.conteo : [];
+      const resultados = [];
+      const internalLocs = await searchRead("stock.location", [["usage", "=", "internal"]], ["id", "name"], null, 50);
+      const mainLocId = (internalLocs.find((l) => l.name === "Stock") || internalLocs[0] || {}).id || null;
+      for (const item of conteo) {
+        const pid = Number(item.product_id);
+        const contado = Number(item.contado);
+        if (!pid) { resultados.push({ product_id: item.product_id, ok: false, error: "Sin product_id" }); continue; }
+        if (isNaN(contado)) { resultados.push({ product_id: pid, ok: false, error: "Conteo inválido" }); continue; }
+        const quants = await searchRead("stock.quant", [["product_id", "=", pid], ["location_id.usage", "=", "internal"]], ["id", "quantity", "location_id"], null, 100);
+        const esperado = quants.reduce((s, q) => s + (q.quantity || 0), 0);
+        const qids = quants.map((q) => q.id);
+        try {
+          if (qids.length === 0) {
+            if (!mainLocId) { resultados.push({ product_id: pid, esperado, contado, ok: false, error: "Sin ubicación interna" }); continue; }
+            const newId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.quant", "create", [{ product_id: pid, location_id: mainLocId, inventory_quantity: contado }]] });
+            await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.quant", "action_apply", [[newId]]] });
+            resultados.push({ product_id: pid, esperado, contado, diff: contado - esperado, ok: true, nuevo: true });
+          } else {
+            for (let i = 0; i < qids.length; i++) {
+              await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.quant", "write", [[qids[i]], { inventory_quantity: i === 0 ? contado : 0 }]] });
+            }
+            await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.quant", "action_apply", [qids]] });
+            resultados.push({ product_id: pid, esperado, contado, diff: contado - esperado, ok: true });
+          }
+        } catch (e) {
+          resultados.push({ product_id: pid, esperado, contado, ok: false, error: e.message || String(e) });
+        }
+      }
+      return Response.json({ resource: "control_stock_aplicar", resultados });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }
