@@ -321,6 +321,12 @@ Deno.serve(async (req) => {
         await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "product.template", "write", [[tmplId], tmplFields]] });
       }
       return Response.json({ resource: "guardar_producto", ok: true });
+    } else if (resource === "coordinar_pedido") {
+      const orderId = Number(body.order_id);
+      const fecha = body.fecha;
+      if (!orderId || !fecha) return Response.json({ error: "Faltan datos" }, { status: 400 });
+      await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "sale.order", "write", [[orderId], { commitment_date: fecha + " 00:00:00" }]] });
+      return Response.json({ resource: "coordinar_pedido", ok: true });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }

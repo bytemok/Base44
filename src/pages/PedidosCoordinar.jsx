@@ -48,6 +48,15 @@ export default function PedidosCoordinar() {
         picking_ids: JSON.stringify(r.picking_ids || []),
         estado: "Programada",
       });
+      try {
+        await base44.functions.invoke("odoo", {
+          resource: "coordinar_pedido",
+          order_id: r.db_id,
+          fecha,
+        });
+      } catch (e) {
+        alert("No se pudo actualizar la fecha de entrega en Odoo: " + (e?.message || e));
+      }
       await loadCoord();
     } finally {
       setSaving(null);
