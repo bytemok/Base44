@@ -264,6 +264,62 @@ Deno.serve(async (req) => {
           },
         },
       });
+    } else if (resource === "catalogo") {
+      const variants = await searchRead(
+        "product.product",
+        [["active", "=", true], ["type", "in", ["product", "consu"]]],
+        ["id", "name", "default_code", "barcode", "image_128", "lst_price", "qty_available", "type", "product_tmpl_id"],
+        "name",
+        100
+      );
+      const tmplIds = [];
+      const seenT = new Set();
+      variants.forEach((v) => {
+        const tid = Array.isArray(v.product_tmpl_id) ? v.product_tmpl_id[0] : null;
+        if (tid && !seenT.has(tid)) { seenT.add(tid); tmplIds.push(tid); }
+      });
+      const tmplMap = {};
+      if (tmplIds.length) {
+        try {
+          const tmpls = await searchRead("product.template", [["id", "in", tmplIds]], ["id", "is_published", "list_price"], null, 100);
+          tmpls.forEach((t) => (tmplMap[t.id] = t));
+        } catch (e) {}
+      }
+      rows = variants.map((v) => {
+        const tid = Array.isArray(v.product_tmpl_id) ? v.product_tmpl_id[0] : null;
+        const t = tid ? tmplMap[tid] || {} : {};
+        return {
+          product_id: v.id,
+          tmpl_id: tid,
+          nombre: v.name || "",
+          codigo: v.default_code || "",
+          barcode: v.barcode || "",
+          precio: v.lst_price || t.list_price || 0,
+          stock: v.qty_available || 0,
+          tipo: v.type || "",
+          publicado: !!t.is_published,
+          imagen: v.image_128 || null,
+        };
+      });
+      extra.odoo_url = ODOO_URL;
+    } else if (resource === "guardar_producto") {
+      const productId = Number(body.product_id);
+      const tmplId = Number(body.tmpl_id);
+      if (!productId || !tmplId) return Response.json({ error: "Faltan ids" }, { status: 400 });
+      const prodFields = {};
+      if (body.default_code !== undefined) prodFields.default_code = body.default_code || false;
+      if (body.barcode !== undefined) prodFields.barcode = body.barcode || false;
+      if (Object.keys(prodFields).length) {
+        await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "product.product", "write", [[productId], prodFields]] });
+      }
+      const tmplFields = {};
+      if (body.nombre !== undefined) tmplFields.name = body.nombre;
+      if (body.precio !== undefined) tmplFields.list_price = Number(body.precio) || 0;
+      if (body.publicado !== undefined) tmplFields.is_published = !!body.publicado;
+      if (Object.keys(tmplFields).length) {
+        await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "product.template", "write", [[tmplId], tmplFields]] });
+      }
+      return Response.json({ resource: "guardar_producto", ok: true });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }

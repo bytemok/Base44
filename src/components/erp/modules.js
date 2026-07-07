@@ -6,7 +6,7 @@ export const MODULES = [
   { slug: "coordinar", label: "Pedidos a coordinar", icon: ClipboardList, section: "Operación", path: "/coordinar" },
   { slug: "calendario", label: "Calendario de Entregas", icon: CalendarDays, section: "Operación", path: "/calendario" },
   { slug: "recepciones", label: "Recepciones", icon: Inbox, section: "Operación", path: "/recepciones" },
-  { slug: "productos", label: "Productos", icon: Package, section: "Catálogo", path: "/productos" },
+  { slug: "productos", label: "Catálogo web", icon: Package, section: "Catálogo", path: "/productos" },
   { slug: "clientes", label: "Clientes", icon: Users, section: "Catálogo", path: "/clientes" },
   { slug: "facturas", label: "Facturas", icon: Receipt, section: "Finanzas", path: "/facturas" },
 ];
