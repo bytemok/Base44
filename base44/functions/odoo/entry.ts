@@ -201,6 +201,59 @@ Deno.serve(async (req) => {
         productos: moveMap[p.id] || [],
       }));
       extra.odoo_url = ODOO_URL;
+    } else if (resource === "enviados") {
+      const r = await searchRead(
+        "stock.picking",
+        [["picking_type_code", "=", "outgoing"], ["state", "=", "confirmed"]],
+        ["id", "name", "origin", "partner_id", "scheduled_date", "state", "location_dest_id"],
+        "scheduled_date desc",
+        100
+      );
+      const pids = r.map((p) => p.id);
+      let moveMap = {};
+      if (pids.length) {
+        const moves = await searchRead(
+          "stock.move",
+          [["picking_id", "in", pids], ["state", "!=", "done"]],
+          ["id", "product_id", "product_qty", "product_uom", "picking_id"],
+          null,
+          500
+        );
+        const prodIds = [];
+        moves.forEach((m) => { const id = Array.isArray(m.product_id) ? m.product_id[0] : null; if (id) prodIds.push(id); });
+        const attrMap = await loadVariantAttrs(prodIds);
+        moves.forEach((m) => {
+          const pid = Array.isArray(m.picking_id) ? m.picking_id[0] : null;
+          const prodId = Array.isArray(m.product_id) ? m.product_id[0] : null;
+          if (!pid) return;
+          (moveMap[pid] = moveMap[pid] || []).push({
+            producto: m2o(m.product_id),
+            qty: m.product_qty || 0,
+            uom: m2o(m.product_uom),
+            atributos: attrMap[prodId] || [],
+          });
+        });
+      }
+      const origenes = r.map((p) => p.origin).filter(Boolean);
+      const orderByName = {};
+      if (origenes.length) {
+        try {
+          const sos = await searchRead("sale.order", [["name", "in", origenes]], ["id", "name"], null, 100);
+          sos.forEach((s) => (orderByName[s.name] = s.id));
+        } catch (e) {}
+      }
+      rows = r.map((p) => ({
+        picking_id: p.id,
+        referencia: p.name || "",
+        origen: p.origin || "",
+        order_id: orderByName[p.origin] || null,
+        cliente: m2o(p.partner_id),
+        fecha: p.scheduled_date ? p.scheduled_date.slice(0, 16).replace("T", " ") : "",
+        estado: p.state || "",
+        destino: m2o(p.location_dest_id),
+        productos: moveMap[p.id] || [],
+      }));
+      extra.odoo_url = ODOO_URL;
     } else if (resource === "recibir_pickings") {
       const ids = Array.isArray(body.ids) ? body.ids.map(Number).filter(Boolean) : [];
       if (!ids.length) return Response.json({ error: "Faltan ids" }, { status: 400 });
