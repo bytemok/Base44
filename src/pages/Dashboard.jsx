@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { MODULES, SECTIONS } from "@/components/erp/modules";
+import { usePedidoCount } from "@/hooks/usePedidoCount";
 
-function ModuleCard({ module }) {
+function ModuleCard({ module, badgeCount }) {
   const Icon = module.icon;
   return (
     <Link
@@ -14,9 +15,9 @@ function ModuleCard({ module }) {
       </div>
       <div>
         <p className="text-sm font-medium text-slate-800">{module.label}</p>
-        {module.badge != null && (
+        {module.badgeType === "nuevos" && badgeCount > 0 && (
           <span className="mt-1 inline-flex items-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-            {module.badge}
+            {badgeCount}
           </span>
         )}
       </div>
@@ -31,6 +32,7 @@ export default function Dashboard() {
     if (h < 20) return "Buenas tardes";
     return "Buenas noches";
   }, []);
+  const { count: nuevosCount } = usePedidoCount("Nuevo");
 
   return (
     <div className="space-y-8">
@@ -52,7 +54,7 @@ export default function Dashboard() {
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {MODULES.filter((m) => m.section === section).map((m) => (
-              <ModuleCard key={m.slug} module={m} />
+              <ModuleCard key={m.slug} module={m} badgeCount={m.badgeType === "nuevos" ? nuevosCount : 0} />
             ))}
           </div>
         </section>

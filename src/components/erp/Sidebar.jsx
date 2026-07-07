@@ -2,9 +2,11 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Package, ChevronLeft, X } from "lucide-react";
 import { MODULES, SECTIONS } from "./modules";
+import { usePedidoCount } from "@/hooks/usePedidoCount";
 
 export default function Sidebar({ open, onClose }) {
   const location = useLocation();
+  const { count: nuevosCount } = usePedidoCount("Nuevo");
   const isActive = (path) => {
     const [base, query] = path.split("?");
     if (query) {
@@ -74,7 +76,7 @@ export default function Sidebar({ open, onClose }) {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span className="flex-1 truncate">{m.label}</span>
-                      {m.badge != null && (
+                      {m.badgeType === "nuevos" && nuevosCount > 0 && (
                         <span
                           className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                             active
@@ -82,7 +84,7 @@ export default function Sidebar({ open, onClose }) {
                               : "bg-white/10 text-slate-400"
                           }`}
                         >
-                          {m.badge}
+                          {nuevosCount}
                         </span>
                       )}
                     </Link>
