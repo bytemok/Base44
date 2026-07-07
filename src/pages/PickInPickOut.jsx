@@ -87,7 +87,7 @@ export default function PickInPickOut() {
     if (!code) return;
     const prod = porBarcode[code];
     if (prod) {
-      setProductos((p) => ({ ...p, [code]: { product_id: prod.product_id, nombre: prod.nombre, qty: (p[code]?.qty || 0) + 1, precio: prod.precio || 0 } }));
+      setProductos((p) => ({ ...p, [code]: { product_id: prod.product_id, nombre: prod.nombre, qty: (p[code]?.qty || 0) + 1, precio: prod.precio || 0, atributos: prod.atributos || [] } }));
       setError(null);
     } else setError(`Producto no encontrado: ${code}`);
     setProdInput("");
@@ -259,6 +259,13 @@ export default function PickInPickOut() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-slate-900">{p.nombre}</p>
                     <p className="text-xs text-slate-400">{code}</p>
+                    {p.atributos?.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {p.atributos.map((a, i) => (
+                          <span key={i} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{a.atributo}: {a.valor}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5">
                     <button onClick={() => inc(code, -1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><Minus className="h-3.5 w-3.5" /></button>

@@ -637,6 +637,7 @@ Deno.serve(async (req) => {
         "name",
         500
       );
+      const attrMap = await loadVariantAttrs(r.map((p) => p.id));
       rows = r.map((p) => ({
         product_id: p.id,
         nombre: p.name || "",
@@ -644,6 +645,7 @@ Deno.serve(async (req) => {
         barcode: p.barcode || "",
         esperado: p.qty_available || 0,
         precio: p.lst_price || 0,
+        atributos: attrMap[p.id] || [],
       }));
     } else if (resource === "control_stock_aplicar") {
       const conteo = Array.isArray(body.conteo) ? body.conteo : [];
