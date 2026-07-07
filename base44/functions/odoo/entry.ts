@@ -99,10 +99,12 @@ Deno.serve(async (req) => {
       const r = await searchRead(
         "res.partner",
         [["customer_rank", ">", 0]],
-        ["name", "email", "phone", "vat", "city", "country_id", "parent_id"],
-        "name"
+        ["id", "name", "email", "phone", "vat", "city", "country_id", "parent_id", "ref"],
+        "name",
+        500
       );
       rows = r.map((p) => ({
+        id: p.id,
         nombre: p.name || "",
         email: p.email || "",
         telefono: p.phone || "",
@@ -110,6 +112,7 @@ Deno.serve(async (req) => {
         ciudad: p.city || "",
         pais: m2o(p.country_id),
         empresa: m2o(p.parent_id),
+        ref: p.ref || "",
       }));
     } else if (resource === "productos") {
       const r = await searchRead(
@@ -585,7 +588,7 @@ Deno.serve(async (req) => {
       const r = await searchRead(
         "product.product",
         [["active", "=", true], ["type", "in", ["product", "consu"]]],
-        ["id", "name", "default_code", "barcode", "qty_available"],
+        ["id", "name", "default_code", "barcode", "qty_available", "lst_price"],
         "name",
         500
       );
@@ -595,6 +598,7 @@ Deno.serve(async (req) => {
         codigo: p.default_code || "",
         barcode: p.barcode || "",
         esperado: p.qty_available || 0,
+        precio: p.lst_price || 0,
       }));
     } else if (resource === "control_stock_aplicar") {
       const conteo = Array.isArray(body.conteo) ? body.conteo : [];
@@ -627,6 +631,51 @@ Deno.serve(async (req) => {
         }
       }
       return Response.json({ resource: "control_stock_aplicar", resultados });
+    } else if (resource === "pickings_crear") {
+      const tipo = body.tipo; // 'in' | 'out'
+      const partnerId = Number(body.partner_id);
+      const lineas = Array.isArray(body.lineas) ? body.lineas : [];
+      if (!partnerId || !tipo || !lineas.length) return Response.json({ error: "Faltan datos" }, { status: 400 });
+      const code = tipo === "in" ? "incoming" : "outgoing";
+      const ptypes = await searchRead("stock.picking.type", [["code", "=", code]], ["id", "default_location_src_id", "default_location_dest_id"], null, 1);
+      const ptype = ptypes[0];
+      if (!ptype) return Response.json({ error: "No hay tipo de picking " + code }, { status: 400 });
+      const srcId = Array.isArray(ptype.default_location_src_id) ? ptype.default_location_src_id[0] : null;
+      const dstId = Array.isArray(ptype.default_location_dest_id) ? ptype.default_location_dest_id[0] : null;
+      if (!srcId || !dstId) return Response.json({ error: "Faltan ubicaciones del tipo de picking" }, { status: 400 });
+      const pickingId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.picking", "create", [{ partner_id: partnerId, picking_type_id: ptype.id, location_id: srcId, location_dest_id: dstId, origin: body.origin || ("Pick " + (tipo === "in" ? "In" : "Out")), scheduled_date: new Date().toISOString() }]] });
+      for (const ln of lineas) {
+        const prodId = Number(ln.product_id);
+        const qty = Number(ln.qty);
+        if (!prodId || !qty) continue;
+        const [prod] = await searchRead("product.product", [["id", "=", prodId]], ["name", "uom_id"], null, 1);
+        const uomId = Array.isArray(prod?.uom_id) ? prod.uom_id[0] : null;
+        const moveId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.move", "create", [{ picking_id: pickingId, product_id: prodId, name: prod?.name || "", product_uom: uomId, product_uom_qty: qty, location_id: srcId, location_dest_id: dstId }]] });
+        await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.move.line", "create", [{ move_id: moveId, picking_id: pickingId, product_id: prodId, product_uom_id: uomId, quantity: qty, location_id: srcId, location_dest_id: dstId }]] });
+      }
+      const res = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.picking", "button_validate", [[pickingId]]] });
+      if (res && typeof res === "object" && res.res_model === "stock.immediate.transfer") {
+        const wizId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.immediate.transfer", "create", [{ pick_ids: [[6, 0, [pickingId]]] }]] });
+        await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.immediate.transfer", "process", [wizId]] });
+      } else if (res && typeof res === "object" && res.res_model === "stock.backorder.confirmation") {
+        const wizId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.backorder.confirmation", "create", [{ pick_ids: [[6, 0, [pickingId]]] }]] });
+        await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "stock.backorder.confirmation", "process", [wizId]] });
+      }
+      const [pick] = await searchRead("stock.picking", [["id", "=", pickingId]], ["name", "state"], null, 1);
+      return Response.json({ resource: "pickings_crear", picking_id: pickingId, name: pick?.name, estado: pick?.state, odoo_url: ODOO_URL });
+    } else if (resource === "registrar_pago_caja") {
+      const partnerId = Number(body.partner_id);
+      const amount = Number(body.amount);
+      if (!partnerId || !amount) return Response.json({ error: "Faltan datos" }, { status: 400 });
+      const journals = await searchRead("account.journal", [["name", "ilike", "Caja Deposito"]], ["id", "inbound_payment_method_line_ids"], null, 5);
+      const journal = journals[0];
+      if (!journal) return Response.json({ error: "No se encontró el diario 'Caja Deposito'" }, { status: 400 });
+      const pmlId = Array.isArray(journal.inbound_payment_method_line_ids) && journal.inbound_payment_method_line_ids.length ? journal.inbound_payment_method_line_ids[0] : null;
+      const vals = { payment_type: "inbound", partner_type: "customer", partner_id: partnerId, journal_id: journal.id, amount, date: new Date().toISOString().slice(0, 10), ref: body.ref || "Pick Out" };
+      if (pmlId) vals.payment_method_line_id = pmlId;
+      const payId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "create", [vals]] });
+      await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[payId]]] });
+      return Response.json({ resource: "registrar_pago_caja", payment_id: payId, journal_id: journal.id });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }

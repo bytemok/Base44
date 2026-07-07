@@ -18,6 +18,7 @@ import Recepciones from '@/pages/Recepciones';
 import PedidosEnviados from '@/pages/PedidosEnviados';
 import Inventario from '@/pages/Inventario';
 import ControlStock from '@/pages/ControlStock';
+import PickInPickOut from '@/pages/PickInPickOut';
 import Facturas from '@/pages/Facturas';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
           <Route path="/enviados" element={<PedidosEnviados />} />
           <Route path="/inventario" element={<Inventario />} />
           <Route path="/control-stock" element={<ControlStock />} />
+          <Route path="/pick" element={<PickInPickOut />} />
           <Route path="/facturas" element={<Facturas />} />
         </Route>
       </Route>
