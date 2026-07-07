@@ -375,6 +375,99 @@ Deno.serve(async (req) => {
         };
       });
       extra.odoo_url = ODOO_URL;
+    } else if (resource === "inventario") {
+      const tmpls = await searchRead(
+        "product.template",
+        [["active", "=", true], ["type", "in", ["product", "consu"]]],
+        ["id", "name", "default_code", "list_price", "is_published", "type", "categ_id", "image_128"],
+        "name",
+        200
+      );
+      const tmplIds = tmpls.map((t) => t.id);
+      let variants = [];
+      const ptavMap = {};
+      const pavMap = {};
+      const attrMap = {};
+      if (tmplIds.length) {
+        variants = await searchRead(
+          "product.product",
+          [["product_tmpl_id", "in", tmplIds], ["active", "=", true]],
+          ["id", "name", "default_code", "barcode", "lst_price", "qty_available", "product_tmpl_id", "product_template_attribute_value_ids"],
+          "name",
+          200
+        );
+        const ptavIds = [];
+        variants.forEach((v) => (v.product_template_attribute_value_ids || []).forEach((id) => ptavIds.push(id)));
+        if (ptavIds.length) {
+          const ptavs = await searchRead(
+            "product.template.attribute.value",
+            [["id", "in", ptavIds]],
+            ["id", "product_attribute_value_id", "price_extra"],
+            null,
+            200
+          );
+          const pavIds = [];
+          ptavs.forEach((p) => {
+            const pavId = Array.isArray(p.product_attribute_value_id) ? p.product_attribute_value_id[0] : null;
+            ptavMap[p.id] = { pavId, price_extra: p.price_extra || 0 };
+            if (pavId) pavIds.push(pavId);
+          });
+          if (pavIds.length) {
+            const pavs = await searchRead(
+              "product.attribute.value",
+              [["id", "in", pavIds]],
+              ["id", "name", "attribute_id"],
+              null,
+              200
+            );
+            const attrIds = [];
+            pavs.forEach((p) => {
+              const attrId = Array.isArray(p.attribute_id) ? p.attribute_id[0] : null;
+              pavMap[p.id] = { nombre: p.name || "", attrId };
+              if (attrId) attrIds.push(attrId);
+            });
+            if (attrIds.length) {
+              const attrs = await searchRead("product.attribute", [["id", "in", attrIds]], ["id", "name"], null, 200);
+              attrs.forEach((a) => (attrMap[a.id] = a.name || ""));
+            }
+          }
+        }
+      }
+      const byTmpl = {};
+      variants.forEach((v) => {
+        const tid = Array.isArray(v.product_tmpl_id) ? v.product_tmpl_id[0] : null;
+        if (!tid) return;
+        const atributos = (v.product_template_attribute_value_ids || []).map((ptavId) => {
+          const pt = ptavMap[ptavId] || {};
+          const pv = pavMap[pt.pavId] || {};
+          return {
+            atributo: attrMap[pv.attrId] || "",
+            valor: pv.nombre || "",
+            precio_extra: pt.price_extra || 0,
+          };
+        });
+        (byTmpl[tid] = byTmpl[tid] || []).push({
+          product_id: v.id,
+          nombre: v.name || "",
+          codigo: v.default_code || "",
+          barcode: v.barcode || "",
+          precio: v.lst_price || 0,
+          stock: v.qty_available || 0,
+          atributos,
+        });
+      });
+      rows = tmpls.map((t) => ({
+        tmpl_id: t.id,
+        nombre: t.name || "",
+        codigo: t.default_code || "",
+        precio_base: t.list_price || 0,
+        publicado: !!t.is_published,
+        tipo: t.type || "",
+        categoria: m2o(t.categ_id),
+        imagen: t.image_128 || null,
+        variantes: byTmpl[t.id] || [],
+      }));
+      extra.odoo_url = ODOO_URL;
     } else if (resource === "guardar_producto") {
       const productId = Number(body.product_id);
       const tmplId = Number(body.tmpl_id);

@@ -15,6 +15,7 @@ import Productos from '@/pages/Productos';
 import PedidosCoordinar from '@/pages/PedidosCoordinar';
 import CalendarioEntregas from '@/pages/CalendarioEntregas';
 import Recepciones from '@/pages/Recepciones';
+import Inventario from '@/pages/Inventario';
 import Facturas from '@/pages/Facturas';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
           <Route path="/coordinar" element={<PedidosCoordinar />} />
           <Route path="/calendario" element={<CalendarioEntregas />} />
           <Route path="/recepciones" element={<Recepciones />} />
+          <Route path="/inventario" element={<Inventario />} />
           <Route path="/facturas" element={<Facturas />} />
         </Route>
       </Route>
