@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { MODULES, SECTIONS } from "@/components/erp/modules";
-import { usePedidoCount } from "@/hooks/usePedidoCount";
 
-function ModuleCard({ module, badgeCount }) {
+function ModuleCard({ module }) {
   const Icon = module.icon;
   return (
     <Link
@@ -13,14 +12,7 @@ function ModuleCard({ module, badgeCount }) {
       <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 text-slate-600 transition group-hover:bg-emerald-50 group-hover:text-emerald-600">
         <Icon className="h-5 w-5" />
       </div>
-      <div>
-        <p className="text-sm font-medium text-slate-800">{module.label}</p>
-        {module.badgeType === "nuevos" && badgeCount > 0 && (
-          <span className="mt-1 inline-flex items-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-semibold text-white">
-            {badgeCount}
-          </span>
-        )}
-      </div>
+      <p className="text-sm font-medium text-slate-800">{module.label}</p>
     </Link>
   );
 }
@@ -32,21 +24,14 @@ export default function Dashboard() {
     if (h < 20) return "Buenas tardes";
     return "Buenas noches";
   }, []);
-  const { count: nuevosCount } = usePedidoCount("Nuevo");
 
   return (
     <div className="space-y-8">
-      {/* Saludo */}
       <div>
-        <h1 className="text-2xl font-semibold text-slate-900">
-          {greeting} 👋
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Elegí un módulo para empezar.
-        </p>
+        <h1 className="text-2xl font-semibold text-slate-900">{greeting} 👋</h1>
+        <p className="mt-1 text-sm text-slate-500">Elegí un módulo para empezar.</p>
       </div>
 
-      {/* Secciones de módulos */}
       {SECTIONS.map((section) => (
         <section key={section}>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -54,7 +39,7 @@ export default function Dashboard() {
           </h2>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {MODULES.filter((m) => m.section === section).map((m) => (
-              <ModuleCard key={m.slug} module={m} badgeCount={m.badgeType === "nuevos" ? nuevosCount : 0} />
+              <ModuleCard key={m.slug} module={m} />
             ))}
           </div>
         </section>

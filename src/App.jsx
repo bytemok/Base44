@@ -9,6 +9,12 @@ import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import Pedidos from '@/pages/Pedidos';
 import Dashboard from '@/pages/Dashboard';
+import Ventas from '@/pages/Ventas';
+import Clientes from '@/pages/Clientes';
+import Productos from '@/pages/Productos';
+import Entregas from '@/pages/Entregas';
+import Recepciones from '@/pages/Recepciones';
+import Facturas from '@/pages/Facturas';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -43,6 +49,12 @@ const AuthenticatedApp = () => {
         <Route element={<ErpLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/pedidos" element={<Pedidos />} />
+          <Route path="/ventas" element={<Ventas />} />
+          <Route path="/clientes" element={<Clientes />} />
+          <Route path="/productos" element={<Productos />} />
+          <Route path="/entregas" element={<Entregas />} />
+          <Route path="/recepciones" element={<Recepciones />} />
+          <Route path="/facturas" element={<Facturas />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />
