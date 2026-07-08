@@ -93,4 +93,12 @@
   body {
     @apply bg-background text-foreground font-body;
   }
+
+  button, [role="switch"], thead, h1, h2, h3, h4, .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .safe-top { padding-top: env(safe-area-inset-top); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 }

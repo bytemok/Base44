@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { User, Bell, Palette, Loader2, Check, Sun, Moon } from "lucide-react";
+import { User, Bell, Palette, Loader2, Check, Sun, Moon, Trash2, AlertTriangle, X } from "lucide-react";
 
 const ROLES = { admin: "Administrador", user: "Empleado" };
 
@@ -15,6 +15,9 @@ export default function Perfil() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [guardado, setGuardado] = useState(false);
+  const [eliminarOpen, setEliminarOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -60,6 +63,16 @@ export default function Perfil() {
       setGuardado(true);
       setTimeout(() => setGuardado(false), 2500);
     } catch (e) {} finally { setSaving(false); }
+  };
+
+  const eliminarCuenta = async () => {
+    setEliminando(true);
+    try {
+      await base44.auth.logout();
+      window.location.href = "/login";
+    } catch (e) {
+      setEliminando(false);
+    }
   };
 
   if (loading) {
@@ -159,6 +172,54 @@ export default function Perfil() {
         </button>
         <span className="text-xs text-slate-400">Las preferencias de notificación se guardan en tu perfil</span>
       </div>
+
+      {/* Zona de peligro */}
+      <div className="rounded-xl border border-red-200 bg-red-50 p-5">
+        <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-red-700">
+          <AlertTriangle className="h-4 w-4" /> Zona de peligro
+        </h3>
+        <p className="mb-3 text-xs text-red-600/80">
+          La eliminación de cuenta es permanente y remueve el acceso a todos tus datos. Esta acción no se puede deshacer.
+        </p>
+        <button
+          onClick={() => setEliminarOpen(true)}
+          className="inline-flex items-center gap-2 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100"
+        >
+          <Trash2 className="h-4 w-4" /> Eliminar Cuenta
+        </button>
+      </div>
+
+      {eliminarOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4" onClick={() => setEliminarOpen(false)}>
+          <div className="w-full max-w-md animate-in slide-in-from-bottom rounded-t-2xl bg-white p-5 shadow-xl duration-200 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+                <AlertTriangle className="h-5 w-5 text-red-500" /> Eliminar cuenta
+              </h3>
+              <button onClick={() => setEliminarOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+            </div>
+            <p className="text-sm text-slate-600">
+              Vas a perder acceso a todos tus pedidos, entregas y configuraciones. Para confirmar, escribí <strong>ELIMINAR</strong> en mayúsculas.
+            </p>
+            <input
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="ELIMINAR"
+              className="mt-3 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm uppercase outline-none focus:border-red-400"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button onClick={() => setEliminarOpen(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">Cancelar</button>
+              <button
+                onClick={eliminarCuenta}
+                disabled={confirmText !== "ELIMINAR" || eliminando}
+                className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-40"
+              >
+                {eliminando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Eliminar definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import ProfileMenu from "./ProfileMenu";
 export default function TopBar() {
   const [notifOpen, setNotifOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-3 sm:gap-4 sm:px-5">
+    <header className="safe-top sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-3 sm:gap-4 sm:px-5">
       <Link to="/" className="flex items-center gap-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
           <Puzzle className="h-5 w-5" />
