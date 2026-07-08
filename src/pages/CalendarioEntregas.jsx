@@ -19,6 +19,15 @@ const ZONE_STYLE = {
   "Sin zona": "bg-slate-100 text-slate-600 ring-slate-200",
 };
 
+const ZONE_BLOCK = {
+  "Zona Oeste": { accent: "border-l-amber-400", band: "bg-amber-50" },
+  "Zona Sur": { accent: "border-l-sky-400", band: "bg-sky-50" },
+  "CABA": { accent: "border-l-violet-400", band: "bg-violet-50" },
+  "Andreani/Expresos": { accent: "border-l-rose-400", band: "bg-rose-50" },
+  "Zona Norte": { accent: "border-l-emerald-400", band: "bg-emerald-50" },
+  "Sin zona": { accent: "border-l-slate-300", band: "bg-slate-50" },
+};
+
 const RESENA = `Hola, ¿cómo estás? Te escribimos de Todo en Muebles. Queríamos saber si quedaste conforme con el producto recibido. Respondé con una opción:
 1. Muy satisfecho
 2. Satisfecho
@@ -103,18 +112,22 @@ export default function CalendarioEntregas() {
     const byDay = {};
     visibles.forEach((r) => {
       const z = r.zona || "Sin zona";
-      (byDay[r.fecha_entrega] = byDay[r.fecha_entrega] || {});
-      (byDay[r.fecha_entrega][z] = byDay[r.fecha_entrega][z] || []).push(r);
+      const key = r.fecha_entrega || "Sin fecha";
+      (byDay[key] = byDay[key] || {});
+      (byDay[key][z] = byDay[key][z] || []).push(r);
     });
-    return Object.keys(byDay).sort().map((fecha) => ({
-      fecha,
-      zones: Object.keys(byDay[fecha])
-        .sort((a, b) => {
-          const ia = ZONE_ORDER.indexOf(a), ib = ZONE_ORDER.indexOf(b);
-          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-        })
-        .map((z) => ({ zona: z, items: byDay[fecha][z] })),
-    }));
+    return Object.keys(byDay)
+      .sort((a, b) => (a === "Sin fecha" ? 1 : b === "Sin fecha" ? -1 : a.localeCompare(b)))
+      .map((fecha) => {
+        const zones = Object.keys(byDay[fecha])
+          .sort((a, b) => {
+            const ia = ZONE_ORDER.indexOf(a), ib = ZONE_ORDER.indexOf(b);
+            return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+          })
+          .map((z) => ({ zona: z, items: byDay[fecha][z] }));
+        const total = zones.reduce((s, z) => s + z.items.length, 0);
+        return { fecha, zones, total };
+      });
   }, [visibles]);
 
   const enviadasCount = (data || []).filter((r) => r.enviada).length;
@@ -167,27 +180,32 @@ export default function CalendarioEntregas() {
         <div className="space-y-6">
           {grouped.map((g) => (
             <div key={g.fecha}>
-              <div className="mb-3 flex justify-center">
+              <div className="mb-3 flex items-center justify-center gap-3">
                 <span className="rounded-full bg-[#131722] px-3.5 py-1 text-xs font-medium text-white">
-                  {(() => {
-                    const f = new Date(g.fecha + "T00:00:00");
-                    const wd = f.toLocaleDateString("es-AR", { weekday: "long" });
-                    const d = f.toLocaleDateString("es-AR", { day: "2-digit" });
-                    const m = f.toLocaleDateString("es-AR", { month: "long" });
-                    return `${wd}, ${d} de ${m}`;
-                  })()}
+                  {g.fecha === "Sin fecha"
+                    ? "Sin fecha"
+                    : (() => {
+                        const f = new Date(g.fecha + "T00:00:00");
+                        const wd = f.toLocaleDateString("es-AR", { weekday: "long" });
+                        const d = f.toLocaleDateString("es-AR", { day: "2-digit" });
+                        const m = f.toLocaleDateString("es-AR", { month: "long" });
+                        return `${wd}, ${d} de ${m}`;
+                      })()}
                 </span>
+                <span className="text-xs text-slate-400">{g.total} entrega(s) · {g.zones.length} zona(s)</span>
               </div>
-              <div className="space-y-5">
-                {g.zones.map((zg) => (
-                  <div key={zg.zona}>
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${ZONE_STYLE[zg.zona] || ZONE_STYLE["Sin zona"]}`}>
+              <div className="space-y-4">
+                {g.zones.map((zg) => {
+                  const blk = ZONE_BLOCK[zg.zona] || ZONE_BLOCK["Sin zona"];
+                  return (
+                  <div key={zg.zona} className={`overflow-hidden rounded-2xl border border-slate-200 border-l-4 bg-white ${blk.accent}`}>
+                    <div className={`flex items-center justify-between px-4 py-2.5 ${blk.band}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold ring-1 ${ZONE_STYLE[zg.zona] || ZONE_STYLE["Sin zona"]}`}>
                         <MapPin className="h-3 w-3" /> {zg.zona}
                       </span>
-                      <span className="text-xs text-slate-400">{zg.items.length} entrega(s)</span>
+                      <span className="text-xs font-medium text-slate-500">{zg.items.length} entrega(s)</span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="divide-y divide-slate-100">
                       {zg.items.map((r) => {
                         const invIds = safeParse(r.invoice_ids);
                         const pickIds = safeParse(r.picking_ids);
@@ -195,7 +213,7 @@ export default function CalendarioEntregas() {
                         return (
                           <div
                             key={r.id}
-                            className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between"
+                            className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between"
                           >
                             <div className="flex items-start gap-3">
                               <input
@@ -297,7 +315,8 @@ export default function CalendarioEntregas() {
                       })}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
