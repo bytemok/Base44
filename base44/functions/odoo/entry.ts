@@ -862,8 +862,8 @@ Deno.serve(async (req) => {
       });
       const partnerMap = {};
       if (partnerIds.length) {
-        const partners = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city", "phone"], null, 300);
-        partners.forEach((p) => { partnerMap[p.id] = { city: p.city || "", phone: p.phone || "" }; });
+        const partners = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city", "phone", "street", "street2", "zip"], null, 300);
+        partners.forEach((p) => { partnerMap[p.id] = { city: p.city || "", phone: p.phone || "", direccion: p.street || "", direccion2: p.street2 || "", cp: p.zip || "" }; });
       }
       const pickState = {};
       if (allPickIds.length) {
@@ -890,6 +890,9 @@ Deno.serve(async (req) => {
           estado: r.estado,
           ciudad: partner.city || "",
           telefono: partner.phone || "",
+          direccion: partner.direccion || "",
+          direccion2: partner.direccion2 || "",
+          cp: partner.cp || "",
           transporte: o.carrier || "",
           zona: zonaDe(partner.city, o.carrier),
           enviada,

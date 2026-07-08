@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Printer, FileText, Package, Eye, Tags, CalendarDays, MessageCircle, CheckCircle2, MapPin, ChevronDown, ChevronRight } from "lucide-react";
+import { Printer, FileText, Package, Eye, Tags, CalendarDays, MessageCircle, CheckCircle2, MapPin, ChevronDown, ChevronRight, Navigation } from "lucide-react";
 import DetallePedido from "@/components/erp/DetallePedido";
+import RutaEntregas from "@/components/erp/RutaEntregas";
 import { ZONE_ORDER, ZONE_STYLE, ZONE_BLOCK } from "@/lib/zonas";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -42,6 +43,7 @@ export default function CalendarioEntregas() {
   const [zonaFiltro, setZonaFiltro] = useState("Todas");
   const [estadoFiltro, setEstadoFiltro] = useState("Todas");
   const [collapsed, setCollapsed] = useState(new Set());
+  const [rutaOpen, setRutaOpen] = useState(false);
 
   // Mantener estado: marcar Entregada a las que ya salieron en Odoo
   useEffect(() => {
@@ -95,6 +97,8 @@ export default function CalendarioEntregas() {
     return ids;
   }, [visibles, selected]);
 
+  const selectedRows = useMemo(() => visibles.filter((r) => selected.has(r.id)), [visibles, selected]);
+
   const printMasivo = () => {
     if (!allInvoiceIds.length || !odooUrl) return;
     window.open(
@@ -141,13 +145,22 @@ export default function CalendarioEntregas() {
             {(data || []).length} entregas · {pendientesCount} pendientes · {enviadasCount} enviadas
           </p>
         </div>
-        <button
-          onClick={printMasivo}
-          disabled={!allInvoiceIds.length}
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-40"
-        >
-          <Printer className="h-4 w-4" /> Imprimir facturas ({allInvoiceIds.length})
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setRutaOpen(true)}
+            disabled={!selectedRows.length}
+            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
+          >
+            <Navigation className="h-4 w-4" /> Armar ruta ({selectedRows.length})
+          </button>
+          <button
+            onClick={printMasivo}
+            disabled={!allInvoiceIds.length}
+            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-40"
+          >
+            <Printer className="h-4 w-4" /> Imprimir facturas ({allInvoiceIds.length})
+          </button>
+        </div>
       </div>
 
       {/* Filtros: estado + zona */}
@@ -355,6 +368,10 @@ export default function CalendarioEntregas() {
 
       {detalleOrderId && (
         <DetallePedido orderId={detalleOrderId} onClose={() => setDetalleOrderId(null)} />
+      )}
+
+      {rutaOpen && (
+        <RutaEntregas entregas={selectedRows} onClose={() => setRutaOpen(false)} />
       )}
     </div>
   );
