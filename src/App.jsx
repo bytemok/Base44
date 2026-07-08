@@ -18,6 +18,7 @@ import Recepciones from '@/pages/Recepciones';
 import PedidosEnviados from '@/pages/PedidosEnviados';
 import ProductosStock from '@/pages/ProductosStock';
 import Variantes from '@/pages/Variantes';
+import StockDisponible from '@/pages/StockDisponible';
 import ControlStock from '@/pages/ControlStock';
 import PickInPickOut from '@/pages/PickInPickOut';
 import Facturas from '@/pages/Facturas';
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
           <Route path="/enviados" element={<PedidosEnviados />} />
           <Route path="/inventario" element={<ProductosStock />} />
           <Route path="/variantes" element={<Variantes />} />
+          <Route path="/stock-disponible" element={<StockDisponible />} />
           <Route path="/control-stock" element={<ControlStock />} />
           <Route path="/pick" element={<PickInPickOut />} />
           <Route path="/facturas" element={<Facturas />} />
