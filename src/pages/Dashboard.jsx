@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { MODULES, SECTIONS } from "@/components/erp/modules";
+import AnalisisLogistico from "@/components/erp/AnalisisLogistico";
 
 function ModuleCard({ module }) {
   const Icon = module.icon;
@@ -31,6 +32,8 @@ export default function Dashboard() {
         <h1 className="text-2xl font-semibold text-slate-900">{greeting} 👋</h1>
         <p className="mt-1 text-sm text-slate-500">Elegí un módulo para empezar.</p>
       </div>
+
+      <AnalisisLogistico />
 
       {SECTIONS.map((section) => (
         <section key={section}>
