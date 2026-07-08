@@ -31,8 +31,9 @@ function networkFetch(resource, limit) {
   return p;
 }
 
-export function useOdoo(resource, limit) {
+export function useOdoo(resource, limit, opts = {}) {
   const key = keyOf(resource, limit);
+  const fresh = !!opts.fresh; // bypass cache for callers whose fields changed (e.g. Ventas)
   const [data, setData] = useState(() => cache.get(key)?.data || []);
   const [meta, setMeta] = useState(() => cache.get(key)?.meta || null);
   const [loading, setLoading] = useState(() => !cache.has(key));
@@ -40,15 +41,15 @@ export function useOdoo(resource, limit) {
   const alive = useRef(true);
 
   const load = useCallback(async (force = false) => {
-    if (force) cache.delete(key);
+    if (force || fresh) cache.delete(key);
     const entry = cache.get(key);
     const hasCache = !!entry;
-    const fresh = hasCache && Date.now() - entry.ts < TTL;
+    const isFresh = hasCache && Date.now() - entry.ts < TTL;
     // Show cached data instantly; only spin if we have nothing to show.
     if (hasCache) setLoading(false);
     else setLoading(true);
     setError(null);
-    if (fresh && !force) return; // fresh enough — skip the network (dedup + cache win)
+    if (isFresh && !force && !fresh) return; // fresh enough — skip the network (dedup + cache win)
     try {
       const { data: d, meta: m } = await networkFetch(resource, limit);
       if (!alive.current) return;
@@ -60,7 +61,7 @@ export function useOdoo(resource, limit) {
     } finally {
       if (alive.current) setLoading(false);
     }
-  }, [resource, limit, key]);
+  }, [resource, limit, key, fresh]);
 
   useEffect(() => {
     alive.current = true;

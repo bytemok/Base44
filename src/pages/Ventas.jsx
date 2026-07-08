@@ -41,6 +41,7 @@ export default function Ventas() {
       columns={columns}
       searchKeys={["id", "cliente"]}
       detailIdKey="db_id"
+      fresh
     />
   );
 }

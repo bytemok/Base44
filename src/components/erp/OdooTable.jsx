@@ -5,8 +5,8 @@ import { useOdoo } from "@/hooks/useOdoo";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import DetallePedido from "@/components/erp/DetallePedido";
 
-export default function OdooTable({ resource, title, subtitle, columns, searchKeys = [], limit, detailIdKey }) {
-  const { data, loading, error, reload } = useOdoo(resource, limit);
+export default function OdooTable({ resource, title, subtitle, columns, searchKeys = [], limit, detailIdKey, fresh }) {
+  const { data, loading, error, reload } = useOdoo(resource, limit, { fresh });
   const [q, setQ] = useState("");
   const [searchParams, setSearchParams] = useSearchParams();
   const detalleId = searchParams.get("detail");
