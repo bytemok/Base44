@@ -1,0 +1,60 @@
+{
+  "name": "HojaRuta",
+  "type": "object",
+  "properties": {
+    "fecha": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del despacho"
+    },
+    "zona": {
+      "type": "string",
+      "description": "Zona principal de la ruta"
+    },
+    "vehiculo": {
+      "type": "string",
+      "description": "Veh\u00edculo asignado (patente o descripci\u00f3n)"
+    },
+    "chofer": {
+      "type": "string",
+      "description": "Conductor asignado"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "Borrador",
+        "En ruta",
+        "Completada"
+      ],
+      "default": "Borrador",
+      "description": "Estado de la hoja de ruta"
+    },
+    "entrega_ids": {
+      "type": "string",
+      "description": "JSON array de ids de EntregaProgramada incluidas"
+    },
+    "cantidad_entregas": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number",
+      "default": 0
+    },
+    "paradas": {
+      "type": "string",
+      "description": "JSON array ordenado de paradas {order_ref, cliente, direccion, ciudad, total}"
+    },
+    "ruta_url": {
+      "type": "string",
+      "description": "URL de Google Maps con la ruta optimizada"
+    },
+    "notas": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "fecha",
+    "estado"
+  ]
+}

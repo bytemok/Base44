@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ClipboardList, CalendarDays, Inbox, Package, Users, Receipt, Boxes, Send, ScanLine, ArrowLeftRight, Layers, Barcode, AlertTriangle, Star, Map, Settings, PackageCheck, BarChart3, PackagePlus } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, CalendarDays, Inbox, Package, Users, Receipt, Boxes, Send, ScanLine, ArrowLeftRight, Layers, Barcode, AlertTriangle, Star, Map, Settings, PackageCheck, BarChart3, PackagePlus, Route } from "lucide-react";
 
 export const MODULES = [
   { slug: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "Operación", path: "/" },
@@ -17,6 +17,7 @@ export const MODULES = [
   { slug: "facturas", label: "Facturas", icon: Receipt, section: "Finanzas", path: "/facturas" },
   { slug: "registro-logistico", label: "Registro Logístico", icon: Barcode, section: "Operación", path: "/registro-logistico" },
   { slug: "compras", label: "Compras", icon: PackagePlus, section: "Operación", path: "/compras" },
+  { slug: "hojas-ruta", label: "Hojas de Ruta", icon: Route, section: "Operación", path: "/hojas-ruta" },
   { slug: "alertas-stock", label: "Alertas Stock", icon: AlertTriangle, section: "Sistema", path: "/alertas-stock" },
   { slug: "reportes", label: "Reportes", icon: BarChart3, section: "Sistema", path: "/reportes" },
   { slug: "reporte-satisfaccion", label: "Satisfacción", icon: Star, section: "Sistema", path: "/reporte-satisfaccion" },
