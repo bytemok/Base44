@@ -10,7 +10,7 @@ export default function Perfil() {
     notif_alertas_stock: true,
     notif_recordatorios_entrega: true,
     notif_novedades: false,
-    tema: "claro",
+    tema: "automatico",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,7 +25,7 @@ export default function Perfil() {
         const u = await base44.auth.me();
         setUser(u);
         const stored = localStorage.getItem("tema");
-        const tema = stored || "claro";
+        const tema = stored || "automatico";
         setPrefs({
           notif_alertas_stock: u.notif_alertas_stock !== false,
           notif_recordatorios_entrega: u.notif_recordatorios_entrega !== false,

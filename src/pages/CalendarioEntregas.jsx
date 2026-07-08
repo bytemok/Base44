@@ -58,8 +58,12 @@ export default function CalendarioEntregas() {
   const [zonaFiltro, setZonaFiltro] = useState("Todas");
   const [estadoFiltro, setEstadoFiltro] = useState("Todas");
   const [collapsed, setCollapsed] = useState(new Set());
-  const [rutaOpen, setRutaOpen] = useState(false);
-  const [crearHoja, setCrearHoja] = useState(false);
+  const rutaOpen = searchParams.get("ruta") === "true";
+  const crearHoja = searchParams.get("crear-hoja") === "true";
+  const openRuta = () => { const n = new URLSearchParams(searchParams); n.set("ruta", "true"); setSearchParams(n); };
+  const closeRuta = () => { const n = new URLSearchParams(searchParams); n.delete("ruta"); setSearchParams(n, { replace: true }); };
+  const openHoja = () => { const n = new URLSearchParams(searchParams); n.set("crear-hoja", "true"); setSearchParams(n); };
+  const closeHoja = () => { const n = new URLSearchParams(searchParams); n.delete("crear-hoja"); setSearchParams(n, { replace: true }); };
 
   // Mantener estado: marcar Entregada a las que ya salieron en Odoo
   useEffect(() => {
@@ -163,14 +167,14 @@ export default function CalendarioEntregas() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setCrearHoja(true)}
+            onClick={openHoja}
             disabled={!selectedRows.length}
             className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-40"
           >
             <Route className="h-4 w-4" /> Crear hoja de ruta ({selectedRows.length})
           </button>
           <button
-            onClick={() => setRutaOpen(true)}
+            onClick={openRuta}
             disabled={!selectedRows.length}
             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-40"
           >
@@ -393,11 +397,11 @@ export default function CalendarioEntregas() {
       )}
 
       {rutaOpen && (
-        <RutaEntregas entregas={selectedRows} onClose={() => setRutaOpen(false)} />
+        <RutaEntregas entregas={selectedRows} onClose={closeRuta} />
       )}
 
       {crearHoja && (
-        <CrearHojaRuta entregas={selectedRows} onClose={() => setCrearHoja(false)} />
+        <CrearHojaRuta entregas={selectedRows} onClose={closeHoja} />
       )}
     </div>
   );

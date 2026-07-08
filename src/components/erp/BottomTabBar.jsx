@@ -19,7 +19,7 @@ export default function BottomTabBar() {
     navigate(to);
   };
   return (
-    <nav className="safe-bottom fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-slate-200 bg-white/95 backdrop-blur md:hidden">
+    <nav className="pb-[env(safe-area-inset-bottom)] fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-slate-200 bg-white/95 backdrop-blur md:hidden">
       {TABS.map((t) => {
         const Icon = t.icon;
         const active = isActive(t.to);

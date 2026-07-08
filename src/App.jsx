@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -96,6 +97,16 @@ const AuthenticatedApp = () => {
 
 
 function App() {
+  useEffect(() => {
+    const stored = localStorage.getItem("tema");
+    const root = document.documentElement;
+    let dark;
+    if (stored === "oscuro") dark = true;
+    else if (stored === "claro") dark = false;
+    else dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (dark) root.classList.add("dark");
+    else root.classList.remove("dark");
+  }, []);
 
   return (
     <AuthProvider>

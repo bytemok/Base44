@@ -3,6 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Plus, Truck, CalendarDays, Eye, Loader2, Inbox, MapPin, User } from "lucide-react";
 import CrearHojaRuta from "@/components/erp/CrearHojaRuta";
 import DetalleHojaRuta from "@/components/erp/DetalleHojaRuta";
+import { useSearchParams } from "react-router-dom";
 import { ZONE_STYLE } from "@/lib/zonas";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -18,8 +19,14 @@ export default function HojasRuta() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filtroEstado, setFiltroEstado] = useState("Todas");
-  const [crear, setCrear] = useState(false);
-  const [detalle, setDetalle] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const crear = searchParams.get("crear") === "true";
+  const detalleId = searchParams.get("hoja");
+  const detalle = hojas.find((h) => h.id === detalleId) || null;
+  const openCrear = () => { const n = new URLSearchParams(searchParams); n.set("crear", "true"); setSearchParams(n); };
+  const closeCrear = () => { const n = new URLSearchParams(searchParams); n.delete("crear"); setSearchParams(n, { replace: true }); };
+  const openDetalle = (h) => { const n = new URLSearchParams(searchParams); n.set("hoja", h.id); setSearchParams(n); };
+  const closeDetalle = () => { const n = new URLSearchParams(searchParams); n.delete("hoja"); setSearchParams(n, { replace: true }); };
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -41,7 +48,7 @@ export default function HojasRuta() {
           <h1 className="text-2xl font-semibold text-slate-900">Hojas de Ruta</h1>
           <p className="mt-1 text-sm text-slate-500">Despachos consolidados por zona y vehículo · {visibles.length} hoja(s)</p>
         </div>
-        <button onClick={() => setCrear(true)} className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800">
+        <button onClick={openCrear} className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-medium text-white hover:bg-slate-800">
           <Plus className="h-4 w-4" /> Nueva hoja de ruta
         </button>
       </div>
@@ -64,7 +71,7 @@ export default function HojasRuta() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {visibles.map((h) => (
-            <button key={h.id} onClick={() => setDetalle(h)} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-left hover:border-slate-300 hover:shadow-sm">
+            <button key={h.id} onClick={() => openDetalle(h)} className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-left hover:border-slate-300 hover:shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-xs font-medium text-slate-500"><CalendarDays className="h-3.5 w-3.5" /> {h.fecha}</span>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${ESTADO_BADGE[h.estado] || ESTADO_BADGE["Borrador"]}`}>{h.estado}</span>
@@ -88,8 +95,8 @@ export default function HojasRuta() {
         </div>
       )}
 
-      {crear && <CrearHojaRuta onClose={() => setCrear(false)} onCreated={load} />}
-      {detalle && <DetalleHojaRuta hoja={detalle} onClose={() => setDetalle(null)} onUpdated={load} />}
+      {crear && <CrearHojaRuta onClose={closeCrear} onCreated={load} />}
+      {detalle && <DetalleHojaRuta hoja={detalle} onClose={closeDetalle} onUpdated={load} />}
     </div>
   );
 }
