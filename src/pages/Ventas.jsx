@@ -4,7 +4,6 @@ import { Search, RefreshCw, Inbox } from "lucide-react";
 import { useOdoo } from "@/hooks/useOdoo";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import VentasTable from "@/components/erp/ventas/VentasTable";
-import VentasCard from "@/components/erp/ventas/VentasCard";
 import DetallePedido from "@/components/erp/DetallePedido";
 
 const TABS = [
@@ -82,14 +81,7 @@ export default function Ventas() {
         </div>
       ) : (
         <>
-          <div className="hidden md:block">
-            <VentasTable rows={rows} onOpen={openDetalle} />
-          </div>
-          <div className="space-y-2 md:hidden">
-            {rows.map((r, i) => (
-              <VentasCard key={i} r={r} onOpen={openDetalle} />
-            ))}
-          </div>
+          <VentasTable rows={rows} onOpen={openDetalle} />
           <p className="text-xs text-slate-400">{rows.length} registros · Sincronizado con Odoo</p>
         </>
       )}
