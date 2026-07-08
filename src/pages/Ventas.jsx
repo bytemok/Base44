@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, RefreshCw, Inbox } from "lucide-react";
+import { Search, RefreshCw, Inbox, Download } from "lucide-react";
 import { useOdoo } from "@/hooks/useOdoo";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { estadoDe } from "@/components/erp/ventas/VentasTable";
 import VentasTable from "@/components/erp/ventas/VentasTable";
 import DetallePedido from "@/components/erp/DetallePedido";
+import { downloadCSV } from "@/lib/csvExport";
 
 const TABS = [
   { id: "lista", label: "Lista para Entregar", filter: (r) => r.sin_entregar && r.listo },
@@ -33,6 +35,25 @@ export default function Ventas() {
   const openDetalle = (id) => { const n = new URLSearchParams(sp); n.set("detail", id); setSp(n); };
   const closeDetalle = () => { const n = new URLSearchParams(sp); n.delete("detail"); setSp(n, { replace: true }); };
 
+  const ESTADO_LABEL = { entregado: "Entregado", listo: "Listo", pendiente: "Pendiente" };
+  const handleExport = () => {
+    const headers = ["Fecha", "Orden", "Cliente", "Teléfono", "Localidad", "Productos", "Total", "Adeudado", "Estado"];
+    const rows = data.map((r) => [
+      r.fecha || "",
+      r.id || "",
+      (r.cliente || "").toUpperCase(),
+      r.telefono || "",
+      r.ciudad || "",
+      (r.productos || []).map((p) => `${p.nombre}${p.qty ? ` (${p.qty})` : ""}${p.entregado ? " ✓" : ""}`).join(" + "),
+      r.total || 0,
+      r.adeudado || 0,
+      ESTADO_LABEL[estadoDe(r)] || "",
+    ]);
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    downloadCSV(`ventas-${stamp}.csv`, headers, rows);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -50,6 +71,9 @@ export default function Ventas() {
               className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 sm:w-64"
             />
           </div>
+          <button onClick={handleExport} disabled={loading || !data.length} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50" title="Exportar a Excel">
+            <Download className="h-4 w-4" />
+          </button>
           <button onClick={reload} disabled={loading} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50" title="Actualizar">
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>
