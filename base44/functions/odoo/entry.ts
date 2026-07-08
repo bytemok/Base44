@@ -371,17 +371,30 @@ Deno.serve(async (req) => {
           sos.forEach((s) => (orderByName[s.name] = s.id));
         } catch (e) {}
       }
-      rows = r.map((p) => ({
-        picking_id: p.id,
-        referencia: p.name || "",
-        origen: p.origin || "",
-        order_id: orderByName[p.origin] || null,
-        cliente: m2o(p.partner_id),
-        fecha: p.scheduled_date ? p.scheduled_date.slice(0, 16).replace("T", " ") : "",
-        estado: p.state || "",
-        destino: m2o(p.location_dest_id),
-        productos: moveMap[p.id] || [],
-      }));
+      const partnerIds = [];
+      r.forEach((p) => { const pid = Array.isArray(p.partner_id) ? p.partner_id[0] : null; if (pid) partnerIds.push(pid); });
+      const partnerPhone = {};
+      if (partnerIds.length) {
+        try {
+          const partners = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "phone", "mobile"], null, 200);
+          partners.forEach((p) => { partnerPhone[p.id] = p.phone || p.mobile || ""; });
+        } catch (e) {}
+      }
+      rows = r.map((p) => {
+        const pid = Array.isArray(p.partner_id) ? p.partner_id[0] : null;
+        return {
+          picking_id: p.id,
+          referencia: p.name || "",
+          origen: p.origin || "",
+          order_id: orderByName[p.origin] || null,
+          cliente: m2o(p.partner_id),
+          telefono: partnerPhone[pid] || "",
+          fecha: p.scheduled_date ? p.scheduled_date.slice(0, 16).replace("T", " ") : "",
+          estado: p.state || "",
+          destino: m2o(p.location_dest_id),
+          productos: moveMap[p.id] || [],
+        };
+      });
       extra.odoo_url = ODOO_URL;
     } else if (resource === "recibir_pickings") {
       const ids = Array.isArray(body.ids) ? body.ids.map(Number).filter(Boolean) : [];

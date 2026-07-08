@@ -1,6 +1,24 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Search, Send, FileText, Tags, Printer, Inbox } from "lucide-react";
+import { Search, Send, FileText, Tags, Printer, Inbox, MessageCircle } from "lucide-react";
+
+const RESENA = `Hola, ¿cómo estás? Te escribimos de Todo en Muebles. Queríamos saber si quedaste conforme con el producto recibido. Respondé con una opción:
+1. Muy satisfecho
+2. Satisfecho
+3. Poco satisfecho
+4. No satisfecho
+Gracias por tu compra y por ayudarnos a mejorar.`;
+const waNumber = (tel) => {
+  let n = (tel || "").replace(/\D/g, "");
+  if (!n) return "";
+  if (n.startsWith("549")) return n;
+  if (n.startsWith("54") && n.length >= 12) return n;
+  if (n.startsWith("9")) return "54" + n;
+  if (n.startsWith("0")) n = n.slice(1);
+  if (n.length === 10 && n.startsWith("11")) return "549" + n;
+  return "549" + n;
+};
+const waLink = (num, text) => (num ? `https://wa.me/${num}?text=${encodeURIComponent(text)}` : "");
 
 export default function PedidosEnviados() {
   const { data, meta, loading, error } = useOdoo("enviados");
@@ -83,6 +101,16 @@ export default function PedidosEnviados() {
                       className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">
                       <Tags className="h-3.5 w-3.5" /> Etiquetas
                     </a>
+                  )}
+                  {waNumber(r.telefono) ? (
+                    <a href={waLink(waNumber(r.telefono), RESENA)} target="_blank" rel="noreferrer" title="Enviar reseña por WhatsApp"
+                      className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2 py-1 text-xs font-medium text-white hover:bg-emerald-700">
+                      <MessageCircle className="h-3.5 w-3.5" /> Reseña
+                    </a>
+                  ) : (
+                    <span title="El cliente no tiene teléfono" className="inline-flex items-center gap-1 rounded-lg border border-slate-100 px-2 py-1 text-xs text-slate-300">
+                      <MessageCircle className="h-3.5 w-3.5" /> Reseña
+                    </span>
                   )}
                 </div>
               </div>
