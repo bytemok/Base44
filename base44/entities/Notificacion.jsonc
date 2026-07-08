@@ -1,0 +1,61 @@
+{
+  "name": "Notificacion",
+  "type": "object",
+  "properties": {
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "despacho",
+        "entrega"
+      ],
+      "description": "Tipo de evento log\u00edstico"
+    },
+    "titulo": {
+      "type": "string"
+    },
+    "mensaje": {
+      "type": "string"
+    },
+    "referencia": {
+      "type": "string",
+      "description": "Clave de deduplicaci\u00f3n (picking_id:tipo)"
+    },
+    "cliente": {
+      "type": "string"
+    },
+    "pedido_ref": {
+      "type": "string"
+    },
+    "leida": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "tipo",
+    "titulo",
+    "referencia"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

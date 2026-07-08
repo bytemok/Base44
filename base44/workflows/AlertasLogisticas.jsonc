@@ -1,0 +1,45 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "alertas_logisticas",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "detectar": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "alertas_logistica",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Detectar movimientos log\u00edsticos",
+            "description": "Consulta Odoo y notifica despacho/entrega"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Alertas Log\u00edsticas",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/10 * * * *",
+      "one_time_date": null,
+      "timezone": "America/Buenos_Aires",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Detecta pedidos que pasan a despacho o entrega en Odoo y notifica a los administradores por email y en la app."
+}
