@@ -28,6 +28,9 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
     return data.filter((row) => searchKeys.some((k) => String(row[k] ?? "").toLowerCase().includes(t)));
   }, [data, q, searchKeys]);
 
+  // TEMP: diagnostic — log the actual productos value reaching the table for the first row
+  if (resource === "ventas" && data.length) console.log("[Ventas debug] row[0]:", { id: data[0].id, keys: Object.keys(data[0]), productos: data[0].productos });
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
