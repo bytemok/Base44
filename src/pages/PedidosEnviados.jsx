@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
 import { Search, Send, FileText, Tags, Printer, Inbox, MessageCircle, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 import DetallePedido from "@/components/erp/DetallePedido";
 
 const RESENA = `Hola, ¿cómo estás? Te escribimos de Todo en Muebles. Queríamos saber si quedaste conforme con el producto recibido. Respondé con una opción:
@@ -38,6 +39,7 @@ export default function PedidosEnviados() {
 
   const printRemito = (r) => (odooUrl ? `${odooUrl}/report/pdf/stock.report_picking/${r.picking_id}` : "");
   const printEtiquetas = (r) => (odooUrl ? `${odooUrl}/report/pdf/stock.report_delivery_label/${r.picking_id}` : "");
+  const etiquetasLink = (r) => (r.order_id ? `/etiquetas?order_id=${r.order_id}` : "");
   const printOrden = (r) => (odooUrl && r.order_id ? `${odooUrl}/report/pdf/sale.report_saleorder/${r.order_id}` : "");
 
   return (
@@ -116,11 +118,11 @@ export default function PedidosEnviados() {
                       <FileText className="h-3.5 w-3.5" /> Remito
                     </a>
                   )}
-                  {printEtiquetas(r) && (
-                    <a href={printEtiquetas(r)} target="_blank" rel="noreferrer" title="Imprimir etiquetas"
+                  {etiquetasLink(r) && (
+                    <Link to={etiquetasLink(r)} title="Imprimir etiquetas"
                       className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">
                       <Tags className="h-3.5 w-3.5" /> Etiquetas
-                    </a>
+                    </Link>
                   )}
                   {waNumber(r.telefono) ? (
                     <a href={waLink(waNumber(r.telefono), RESENA)} target="_blank" rel="noreferrer" title="Enviar reseña por WhatsApp"

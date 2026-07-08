@@ -533,6 +533,11 @@ Deno.serve(async (req) => {
       const lineProdIds = [];
       lines.forEach((l) => { const id = Array.isArray(l.product_id) ? l.product_id[0] : null; if (id) lineProdIds.push(id); });
       const lineAttrMap = await loadVariantAttrs(lineProdIds);
+      const lineBarcodeMap = {};
+      if (lineProdIds.length) {
+        const prodsBc = await searchRead("product.product", [["id", "in", lineProdIds]], ["id", "barcode"], null, 200);
+        prodsBc.forEach((p) => { lineBarcodeMap[p.id] = p.barcode || ""; });
+      }
       const _patasObs = lines.filter((l) => /^patas/i.test((l.name || m2o(l.product_id) || "").trim())).map((l) => `${l.name || m2o(l.product_id)} x${l.product_uom_qty || 0}`).join(" · ");
       const pids = o.picking_ids || [];
       const iids = o.invoice_ids || [];
@@ -572,6 +577,7 @@ Deno.serve(async (req) => {
             precio: l.price_unit || 0,
             subtotal: l.price_subtotal || 0,
             descuento: l.discount || 0,
+            barcode: lineBarcodeMap[Array.isArray(l.product_id) ? l.product_id[0] : null] || "",
             atributos: lineAttrMap[Array.isArray(l.product_id) ? l.product_id[0] : null] || [],
             observacion: /^patas/i.test((l.name || "").trim()) ? "" : _patasObs,
           })),

@@ -27,6 +27,7 @@ import ReporteSatisfaccion from '@/pages/ReporteSatisfaccion';
 import GestionZonas from '@/pages/GestionZonas';
 import AlertasStock from '@/pages/AlertasStock';
 import Reportes from '@/pages/Reportes';
+import Etiquetas from '@/pages/Etiquetas';
 import Perfil from '@/pages/Perfil';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
     <Routes>
       {/* Add your page Route elements here */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/etiquetas" element={<Etiquetas />} />
         <Route element={<ErpLayout />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/pedidos" element={<Pedidos />} />

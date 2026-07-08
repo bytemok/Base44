@@ -4,6 +4,7 @@ import { useOdoo } from "@/hooks/useOdoo";
 import { Printer, FileText, Package, Eye, Tags, CalendarDays, MessageCircle, CheckCircle2, MapPin, ChevronDown, ChevronRight, Navigation } from "lucide-react";
 import DetallePedido from "@/components/erp/DetallePedido";
 import RutaEntregas from "@/components/erp/RutaEntregas";
+import { Link } from "react-router-dom";
 import { ZONE_ORDER, ZONE_STYLE, ZONE_BLOCK } from "@/lib/zonas";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -311,14 +312,12 @@ export default function CalendarioEntregas() {
                                   >
                                     <Package className="h-3.5 w-3.5" /> Remito
                                   </a>
-                                  <a
-                                    href={`${odooUrl}/report/pdf/stock.report_delivery_label/${pickIds.join(",")}`}
-                                    target="_blank"
-                                    rel="noreferrer"
+                                  <Link
+                                    to={`/etiquetas?order_id=${r.odoo_order_id}`}
                                     className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                                   >
                                     <Tags className="h-3.5 w-3.5" /> Etiquetas
-                                  </a>
+                                  </Link>
                                 </>
                               )}
                               {odooUrl && (
