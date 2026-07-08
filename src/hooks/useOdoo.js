@@ -11,20 +11,24 @@ const TTL = 30000;             // 30s
 
 const keyOf = (resource, limit) => `${resource}:${limit || ""}`;
 
-function networkFetch(resource, limit) {
+function networkFetch(resource, limit, ignoreInflight = false) {
   const key = keyOf(resource, limit);
-  if (inflight.has(key)) return inflight.get(key);
+  if (!ignoreInflight && inflight.has(key)) return inflight.get(key);
   const p = base44.functions
     .invoke("odoo", { resource, limit })
     .then((res) => {
       const data = res.data?.data || [];
       const meta = res.data || null;
-      cache.set(key, { data, meta, ts: Date.now() });
-      inflight.delete(key);
+      // Only commit if this is still the active request, so a stale slow
+      // request (e.g. from before a backend change) can't overwrite newer data.
+      if (inflight.get(key) === p) {
+        cache.set(key, { data, meta, ts: Date.now() });
+        inflight.delete(key);
+      }
       return { data, meta };
     })
     .catch((e) => {
-      inflight.delete(key);
+      if (inflight.get(key) === p) inflight.delete(key);
       throw e;
     });
   inflight.set(key, p);
@@ -51,7 +55,7 @@ export function useOdoo(resource, limit, opts = {}) {
     setError(null);
     if (isFresh && !force && !fresh) return; // fresh enough — skip the network (dedup + cache win)
     try {
-      const { data: d, meta: m } = await networkFetch(resource, limit);
+      const { data: d, meta: m } = await networkFetch(resource, limit, force || fresh);
       if (!alive.current) return;
       setData(d);
       setMeta(m);

@@ -9,16 +9,12 @@ const columns = [
     key: "productos",
     label: "Productos",
     render: (r) => (
-      <div className="flex flex-col gap-1">
-        {/* TEMP: raw value visible on screen for diagnosis */}
-        <code className="block text-[10px] font-mono text-pink-600 break-all">productos={JSON.stringify(r.productos ?? null)}</code>
-        <div className="flex flex-col gap-0.5">
-          {(r.productos || []).map((p, i) => (
-            <span key={i} className={p.entregado ? "font-medium text-emerald-600" : "text-slate-900"}>
-              {p.nombre}
-            </span>
-          ))}
-        </div>
+      <div className="flex flex-col gap-0.5">
+        {(r.productos || []).map((p, i) => (
+          <span key={i} className={p.entregado ? "font-medium text-emerald-600" : "text-slate-900"}>
+            {p.nombre}
+          </span>
+        ))}
       </div>
     ),
   },
