@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { MODULES, SECTIONS } from "@/components/erp/modules";
 import AnalisisLogistico from "@/components/erp/AnalisisLogistico";
+import ResumenReportes from "@/components/erp/ResumenReportes";
 
 function ModuleCard({ module }) {
   const Icon = module.icon;
@@ -34,6 +35,7 @@ export default function Dashboard() {
       </div>
 
       <AnalisisLogistico />
+      <ResumenReportes />
 
       {SECTIONS.map((section) => (
         <section key={section}>

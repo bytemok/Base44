@@ -26,6 +26,7 @@ import RegistroLogistico from '@/pages/RegistroLogistico';
 import ReporteSatisfaccion from '@/pages/ReporteSatisfaccion';
 import GestionZonas from '@/pages/GestionZonas';
 import AlertasStock from '@/pages/AlertasStock';
+import Reportes from '@/pages/Reportes';
 import Perfil from '@/pages/Perfil';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -78,6 +79,7 @@ const AuthenticatedApp = () => {
           <Route path="/reporte-satisfaccion" element={<ReporteSatisfaccion />} />
           <Route path="/gestion-zonas" element={<GestionZonas />} />
           <Route path="/alertas-stock" element={<AlertasStock />} />
+          <Route path="/reportes" element={<Reportes />} />
           <Route path="/perfil" element={<Perfil />} />
         </Route>
       </Route>
