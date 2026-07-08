@@ -491,20 +491,25 @@ Deno.serve(async (req) => {
       );
       const orderIds = orders.map((o) => o.id);
       const allPickingIds = [];
+      const allInvoiceIds = [];
       const partnerIds = [];
       orders.forEach((o) => {
         (o.picking_ids || []).forEach((pid) => allPickingIds.push(pid));
+        (o.invoice_ids || []).forEach((inv) => allInvoiceIds.push(inv));
         const pid = Array.isArray(o.partner_id) ? o.partner_id[0] : null;
         if (pid) partnerIds.push(pid);
       });
-      // picks / partners / lines son independientes entre sí -> paralelo para no sumar latencia
-      const [picks, partners, lines] = await Promise.all([
+      // picks / partners / lines / facturas son independientes entre sí -> paralelo para no sumar latencia
+      const [picks, partners, lines, invoices] = await Promise.all([
         allPickingIds.length ? searchRead("stock.picking", [["id", "in", allPickingIds]], ["id", "state"], null, 200) : Promise.resolve([]),
         partnerIds.length ? searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city", "phone"], null, 300) : Promise.resolve([]),
         orderIds.length ? searchRead("sale.order.line", [["order_id", "in", orderIds]], ["id", "order_id", "name", "product_id", "product_uom_qty", "qty_delivered"], "sequence", 500) : Promise.resolve([]),
+        allInvoiceIds.length ? searchRead("account.move", [["id", "in", Array.from(new Set(allInvoiceIds))]], ["id", "amount_residual", "state"], null, 300) : Promise.resolve([]),
       ]);
       const pickingState = {};
       picks.forEach((p) => (pickingState[p.id] = p.state));
+      const invoiceResidual = {};
+      invoices.forEach((inv) => { if (inv.state === "posted") invoiceResidual[inv.id] = (invoiceResidual[inv.id] || 0) + (inv.amount_residual || 0); });
       const partnerCity = {};
       const partnerPhone = {};
       partners.forEach((p) => { partnerCity[p.id] = p.city || ""; partnerPhone[p.id] = p.phone || ""; });
@@ -544,6 +549,7 @@ Deno.serve(async (req) => {
             telefono: partnerPhone[pid] || "",
             transporte: carrier,
             zona: zonaDe(partnerCity[pid] || "", carrier),
+            adeudado: (o.invoice_ids || []).reduce((s, id) => s + (invoiceResidual[id] || 0), 0),
             productos: linesByOrder[o.id] || [],
           };
         });

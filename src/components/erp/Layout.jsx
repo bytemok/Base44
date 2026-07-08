@@ -13,7 +13,7 @@ export default function Layout() {
       </div>
       <main
         id="app-scroll"
-        className="scroll-contain safe-top mx-auto flex-1 max-w-[1600px] overflow-y-auto px-4 pb-24 pt-4 sm:px-6 md:pb-6"
+        className="scroll-contain safe-top mx-auto flex-1 max-w-[1400px] overflow-y-auto px-3 pb-24 pt-4 sm:px-4 md:pb-6"
       >
         <AnimatePresence mode="wait">
           <motion.div

@@ -20,7 +20,7 @@ export default function VentasTable({ rows, onOpen }) {
       <table className="w-full border-collapse text-xs">
         <thead className="sticky top-0 z-10">
           <tr className="bg-slate-50">
-            {["Fecha", "Orden", "Cliente", "Teléfono", "Localidad", "Productos", "Total", "Estado"].map((h) => (
+            {["Fecha", "Orden", "Cliente", "Teléfono", "Localidad", "Productos", "Total", "Adeudado", "Estado"].map((h) => (
               <th key={h} className="border border-slate-200 px-2 py-1.5 text-left font-semibold text-slate-700 whitespace-nowrap">{h}</th>
             ))}
           </tr>
@@ -35,17 +35,21 @@ export default function VentasTable({ rows, onOpen }) {
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-800 uppercase">{r.cliente}</td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-500">{r.telefono || "—"}</td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-500">{r.ciudad || "—"}</td>
-                <td className="border border-slate-200 px-2 py-1.5 text-slate-800 min-w-[260px] max-w-[440px]">
-                  <div className="flex flex-col gap-0.5">
+                <td className="border border-slate-200 px-2 py-1.5 text-slate-800 min-w-[360px] max-w-[620px]">
+                  <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
                     {(r.productos || []).map((p, j) => (
-                      <span key={j} className={p.entregado ? "text-emerald-600" : "text-slate-900"}>
-                        {p.nombre}{p.qty ? ` (${p.qty})` : ""}{p.entregado ? " ✓" : ""}
-                      </span>
+                      <React.Fragment key={j}>
+                        {j > 0 && <span className="text-slate-300">+</span>}
+                        <span className={p.entregado ? "font-medium text-emerald-600" : "text-slate-700"}>
+                          {p.nombre}{p.qty ? ` (${p.qty})` : ""}{p.entregado ? " ✓" : ""}
+                        </span>
+                      </React.Fragment>
                     ))}
                     {!(r.productos || []).length && <span className="text-slate-400">—</span>}
                   </div>
                 </td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-right font-bold text-slate-900">{fmt.format(r.total)}</td>
+                <td className={`border border-slate-200 px-2 py-1.5 whitespace-nowrap text-right font-semibold ${r.adeudado > 0 ? "text-red-600" : "text-emerald-600"}`}>{fmt.format(r.adeudado || 0)}</td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap">
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${ESTADO[e].cls}`}>{ESTADO[e].label}</span>
                 </td>
