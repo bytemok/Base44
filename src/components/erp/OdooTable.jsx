@@ -69,14 +69,18 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((row, i) => (
-                  <tr key={i} className="hover:bg-slate-50">
+                  <tr
+                    key={i}
+                    onClick={detailIdKey ? () => setDetalleId(row[detailIdKey]) : undefined}
+                    className={`hover:bg-slate-50 ${detailIdKey ? "cursor-pointer" : ""}`}
+                  >
                     {columns.map((c) => (
                       <td key={c.key} className={`px-4 py-3 text-slate-700 ${c.className || ""}`}>
                         {c.render ? c.render(row) : row[c.key]}
                       </td>
                     ))}
                     {detailIdKey && (
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setDetalleId(row[detailIdKey])}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
@@ -93,7 +97,11 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
 
           <div className="space-y-2 md:hidden">
             {filtered.map((row, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 bg-white p-3">
+              <div
+                key={i}
+                onClick={detailIdKey ? () => setDetalleId(row[detailIdKey]) : undefined}
+                className={`rounded-xl border border-slate-200 bg-white p-3 ${detailIdKey ? "cursor-pointer hover:border-slate-300 active:bg-slate-50" : ""}`}
+              >
                 {columns.map((c) => (
                   <div key={c.key} className="flex justify-between gap-3 py-0.5">
                     <span className="text-xs text-slate-400">{c.label}</span>
@@ -104,7 +112,7 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
                 ))}
                 {detailIdKey && (
                   <button
-                    onClick={() => setDetalleId(row[detailIdKey])}
+                    onClick={(e) => { e.stopPropagation(); setDetalleId(row[detailIdKey]); }}
                     className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                   >
                     <Eye className="h-3.5 w-3.5" /> Ver detalle

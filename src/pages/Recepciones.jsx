@@ -133,8 +133,12 @@ export default function Recepciones() {
             const sel = selected.has(r.picking_id);
             const ordenUrl = printOrden(r);
             return (
-              <div key={r.picking_id} className={`rounded-xl border bg-white p-4 transition ${sel ? "border-emerald-300 bg-emerald-50/30" : "border-slate-200"}`}>
-                <div className="flex items-start gap-3">
+              <div
+                key={r.picking_id}
+                onClick={r.order_id ? () => setDetalleId(r.order_id) : undefined}
+                className={`rounded-xl border bg-white p-4 transition ${sel ? "border-emerald-300 bg-emerald-50/30" : "border-slate-200"} ${r.order_id ? "cursor-pointer hover:border-slate-300" : ""}`}
+              >
+                <div className="flex items-start gap-3" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => toggle(r.picking_id)} className="mt-0.5 shrink-0">
                     {sel ? <CheckSquare className="h-5 w-5 text-emerald-600" /> : <Square className="h-5 w-5 text-slate-300" />}
                   </button>
@@ -165,7 +169,7 @@ export default function Recepciones() {
                   </div>
                 </div>
                 {r.productos?.filter((p) => !/^patas/i.test((p.producto || "").trim()))?.length > 0 && (
-                  <div className="mt-3 ml-8 divide-y divide-slate-100 rounded-lg border border-slate-100">
+                  <div className="mt-3 ml-8 divide-y divide-slate-100 rounded-lg border border-slate-100" onClick={(e) => e.stopPropagation()}>
                     {r.productos.filter((p) => !/^patas/i.test((p.producto || "").trim())).map((p, i) => (
                       <div key={i} className="px-3 py-1.5">
                         <div className="flex items-center justify-between">

@@ -254,9 +254,10 @@ export default function CalendarioEntregas() {
                         return (
                           <div
                             key={r.id}
-                            className="flex flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between"
+                            onClick={() => setDetalleOrderId(r.odoo_order_id)}
+                            className="flex cursor-pointer flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between hover:bg-slate-50"
                           >
-                            <div className="flex items-start gap-3">
+                            <div className="flex items-start gap-3" onClick={(e) => e.stopPropagation()}>
                               <input
                                 type="checkbox"
                                 checked={selected.has(r.id)}
@@ -283,7 +284,7 @@ export default function CalendarioEntregas() {
                                 {r.ciudad && <p className="text-xs text-slate-400">{r.ciudad}{r.transporte ? ` · ${r.transporte}` : ""}</p>}
                               </div>
                             </div>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                               <button
                                 onClick={() => setDetalleOrderId(r.odoo_order_id)}
                                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"

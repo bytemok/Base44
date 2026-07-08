@@ -116,7 +116,8 @@ export default function PedidosCoordinar() {
                   {zg.items.map((r) => (
                     <div
                       key={r.id}
-                      className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+                      onClick={() => setDetalleId(r.db_id)}
+                      className="flex cursor-pointer flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between hover:bg-slate-50"
                     >
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
@@ -129,7 +130,7 @@ export default function PedidosCoordinar() {
                           Orden: {r.fecha} · {r.transferencias} transferencia(s) · {fmt.format(r.total)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setDetalleId(r.db_id)}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"

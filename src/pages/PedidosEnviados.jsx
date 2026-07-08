@@ -72,8 +72,12 @@ export default function PedidosEnviados() {
       ) : (
         <div className="space-y-2.5">
           {filtered.map((r) => (
-            <div key={r.picking_id} className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="flex items-start gap-3">
+            <div
+              key={r.picking_id}
+              onClick={r.order_id ? () => setDetalleId(r.order_id) : undefined}
+              className={`rounded-xl border border-slate-200 bg-white p-4 ${r.order_id ? "cursor-pointer hover:border-slate-300" : ""}`}
+            >
+              <div className="flex items-start gap-3" onClick={(e) => e.stopPropagation()}>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">Confirmado</span>
@@ -131,7 +135,7 @@ export default function PedidosEnviados() {
                 </div>
               </div>
               {r.productos?.filter((p) => !/^patas/i.test((p.producto || "").trim()))?.length > 0 && (
-                <div className="mt-3 ml-1 divide-y divide-slate-100 rounded-lg border border-slate-100">
+                <div className="mt-3 ml-1 divide-y divide-slate-100 rounded-lg border border-slate-100" onClick={(e) => e.stopPropagation()}>
                   {r.productos.filter((p) => !/^patas/i.test((p.producto || "").trim())).map((p, i) => (
                     <div key={i} className="px-3 py-1.5">
                       <div className="flex items-center justify-between">

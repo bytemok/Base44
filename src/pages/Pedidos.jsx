@@ -250,7 +250,8 @@ export default function Pedidos() {
                 filtered.map((p) => (
                   <tr
                     key={p.id}
-                    className="group text-sm transition hover:bg-slate-50/60"
+                    onClick={() => setDetalle(p)}
+                    className="group cursor-pointer text-sm transition hover:bg-slate-50/60"
                   >
                     <td className="px-4 py-3 font-mono text-xs font-medium text-slate-700">
                       {p.order_id || "—"}
@@ -267,13 +268,13 @@ export default function Pedidos() {
                     <td className="px-4 py-3 text-right font-medium text-slate-900">
                       {formatTotal(p.total)}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <StatusSelect
                         status={p.status}
                         onChange={(s) => handleStatusChange(p, s)}
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => setDetalle(p)}
@@ -324,7 +325,8 @@ export default function Pedidos() {
             filtered.map((p) => (
               <div
                 key={p.id}
-                className="rounded-xl border border-slate-200 bg-white p-4"
+                onClick={() => setDetalle(p)}
+                className="cursor-pointer rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 active:bg-slate-50"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -352,7 +354,7 @@ export default function Pedidos() {
                     {p.items_description}
                   </p>
                 )}
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3" onClick={(e) => e.stopPropagation()}>
                   <StatusSelect
                     status={p.status}
                     onChange={(s) => handleStatusChange(p, s)}
