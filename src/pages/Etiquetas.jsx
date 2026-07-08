@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Printer, ArrowLeft, Loader2 } from "lucide-react";
 import Etiqueta from "@/components/erp/Etiqueta";
 
 export default function Etiquetas() {
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const orderId = params.get("order_id");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -29,9 +30,9 @@ export default function Etiquetas() {
   return (
     <div className="min-h-screen bg-slate-100">
       <div className="no-print sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
-        <Link to="/calendario" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100">
           <ArrowLeft className="h-4 w-4" /> Volver
-        </Link>
+        </button>
         <h1 className="text-sm font-semibold text-slate-800">
           Etiquetas · {orden || "..."}
         </h1>

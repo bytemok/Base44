@@ -9,8 +9,11 @@ export function usePullToRefresh(onRefresh, threshold = 70) {
   cb.current = onRefresh;
 
   useEffect(() => {
+    const scroller = document.getElementById("app-scroll") || window;
+    const getScrollTop = () =>
+      scroller === window ? window.scrollY : scroller.scrollTop;
     const onStart = (e) => {
-      if (window.scrollY > 0) { active.current = false; return; }
+      if (getScrollTop() > 0) { active.current = false; return; }
       startY.current = e.touches[0].clientY;
       lastY.current = startY.current;
       active.current = true;
@@ -23,18 +26,19 @@ export function usePullToRefresh(onRefresh, threshold = 70) {
       if (!active.current) return;
       const dy = lastY.current - startY.current;
       active.current = false;
-      if (dy > threshold && window.scrollY <= 0 && !refreshing) {
+      if (dy > threshold && getScrollTop() <= 0 && !refreshing) {
         setRefreshing(true);
         try { await cb.current?.(); } finally { setRefreshing(false); }
       }
     };
-    window.addEventListener("touchstart", onStart, { passive: true });
-    window.addEventListener("touchmove", onMove, { passive: true });
-    window.addEventListener("touchend", onEnd);
+    const el = scroller === window ? window : scroller;
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: true });
+    el.addEventListener("touchend", onEnd);
     return () => {
-      window.removeEventListener("touchstart", onStart);
-      window.removeEventListener("touchmove", onMove);
-      window.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
     };
   }, [refreshing, threshold]);
 

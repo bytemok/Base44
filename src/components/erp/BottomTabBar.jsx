@@ -15,7 +15,14 @@ export default function BottomTabBar() {
   const isActive = (to) => location.pathname === to || (to !== "/" && location.pathname.startsWith(to));
   const handleClick = (e, to) => {
     e.preventDefault();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const active = isActive(to);
+    if (active) {
+      // Tapping the active tab: programmatic scroll-to-top, no navigation (preserves history)
+      const el = document.getElementById("app-scroll");
+      if (el) el.scrollTo({ top: 0, behavior: "smooth" });
+      else window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     navigate(to);
   };
   return (

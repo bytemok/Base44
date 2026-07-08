@@ -7,11 +7,14 @@ import BottomTabBar from "./BottomTabBar";
 export default function Layout() {
   const location = useLocation();
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-50">
       <div className="hidden md:block">
         <TopBar />
       </div>
-      <main className="safe-top mx-auto max-w-[1600px] px-4 pb-24 pt-4 sm:px-6 md:pb-6">
+      <main
+        id="app-scroll"
+        className="scroll-contain safe-top mx-auto flex-1 max-w-[1600px] overflow-y-auto px-4 pb-24 pt-4 sm:px-6 md:pb-6"
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
