@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Printer, FileText, Package, Eye, Tags, CalendarDays, MessageCircle, CheckCircle2, MapPin } from "lucide-react";
+import { Printer, FileText, Package, Eye, Tags, CalendarDays, MessageCircle, CheckCircle2, MapPin, ChevronDown, ChevronRight } from "lucide-react";
 import DetallePedido from "@/components/erp/DetallePedido";
 import { ZONE_ORDER, ZONE_STYLE, ZONE_BLOCK } from "@/lib/zonas";
 
@@ -40,6 +40,8 @@ export default function CalendarioEntregas() {
   const [selected, setSelected] = useState(new Set());
   const [detalleOrderId, setDetalleOrderId] = useState(null);
   const [zonaFiltro, setZonaFiltro] = useState("Todas");
+  const [estadoFiltro, setEstadoFiltro] = useState("Todas");
+  const [collapsed, setCollapsed] = useState(new Set());
 
   // Mantener estado: marcar Entregada a las que ya salieron en Odoo
   useEffect(() => {
@@ -61,16 +63,27 @@ export default function CalendarioEntregas() {
     ];
   }, [data]);
 
-  const visibles = useMemo(
-    () => (zonaFiltro === "Todas" ? data || [] : (data || []).filter((r) => (r.zona || "Sin zona") === zonaFiltro)),
-    [data, zonaFiltro]
-  );
+  const visibles = useMemo(() => {
+    let rows = data || [];
+    if (zonaFiltro !== "Todas") rows = rows.filter((r) => (r.zona || "Sin zona") === zonaFiltro);
+    if (estadoFiltro === "Pendientes") rows = rows.filter((r) => !r.enviada);
+    else if (estadoFiltro === "Enviadas") rows = rows.filter((r) => r.enviada);
+    return rows;
+  }, [data, zonaFiltro, estadoFiltro]);
 
   const toggle = (id) =>
     setSelected((prev) => {
       const n = new Set(prev);
       if (n.has(id)) n.delete(id);
       else n.add(id);
+      return n;
+    });
+
+  const toggleDay = (fecha) =>
+    setCollapsed((prev) => {
+      const n = new Set(prev);
+      if (n.has(fecha)) n.delete(fecha);
+      else n.add(fecha);
       return n;
     });
 
@@ -106,13 +119,18 @@ export default function CalendarioEntregas() {
             const ia = ZONE_ORDER.indexOf(a), ib = ZONE_ORDER.indexOf(b);
             return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
           })
-          .map((z) => ({ zona: z, items: byDay[fecha][z] }));
+          .map((z) => {
+            const items = byDay[fecha][z];
+            return { zona: z, items, monto: items.reduce((s, r) => s + (r.total || 0), 0) };
+          });
         const total = zones.reduce((s, z) => s + z.items.length, 0);
-        return { fecha, zones, total };
+        const monto = zones.reduce((s, z) => s + z.monto, 0);
+        return { fecha, zones, total, monto };
       });
   }, [visibles]);
 
   const enviadasCount = (data || []).filter((r) => r.enviada).length;
+  const pendientesCount = (data || []).length - enviadasCount;
 
   return (
     <div className="space-y-5">
@@ -120,7 +138,7 @@ export default function CalendarioEntregas() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Calendario de Entregas</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Entregas coordinadas · {(data || []).length} totales · {enviadasCount} enviadas
+            {(data || []).length} entregas · {pendientesCount} pendientes · {enviadasCount} enviadas
           </p>
         </div>
         <button
@@ -132,19 +150,36 @@ export default function CalendarioEntregas() {
         </button>
       </div>
 
-      {/* Filtro por zona */}
-      <div className="flex flex-wrap gap-2">
-        {zonasDisponibles.map((z) => (
-          <button
-            key={z}
-            onClick={() => setZonaFiltro(z)}
-            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
-              zonaFiltro === z ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            {z}
-          </button>
-        ))}
+      {/* Filtros: estado + zona */}
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Estado</span>
+          {["Todas", "Pendientes", "Enviadas"].map((e) => (
+            <button
+              key={e}
+              onClick={() => setEstadoFiltro(e)}
+              className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+                estadoFiltro === e ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Zona</span>
+          {zonasDisponibles.map((z) => (
+            <button
+              key={z}
+              onClick={() => setZonaFiltro(z)}
+              className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+                zonaFiltro === z ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {z}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -160,23 +195,34 @@ export default function CalendarioEntregas() {
         </div>
       ) : (
         <div className="space-y-6">
-          {grouped.map((g) => (
-            <div key={g.fecha}>
-              <div className="mb-3 flex items-center justify-center gap-3">
-                <span className="rounded-full bg-[#131722] px-3.5 py-1 text-xs font-medium text-white">
-                  {g.fecha === "Sin fecha"
-                    ? "Sin fecha"
-                    : (() => {
-                        const f = new Date(g.fecha + "T00:00:00");
-                        const wd = f.toLocaleDateString("es-AR", { weekday: "long" });
-                        const d = f.toLocaleDateString("es-AR", { day: "2-digit" });
-                        const m = f.toLocaleDateString("es-AR", { month: "long" });
-                        return `${wd}, ${d} de ${m}`;
-                      })()}
-                </span>
-                <span className="text-xs text-slate-400">{g.total} entrega(s) · {g.zones.length} zona(s)</span>
-              </div>
-              <div className="space-y-4">
+          {grouped.map((g) => {
+            const isCollapsed = collapsed.has(g.fecha);
+            return (
+            <div key={g.fecha} className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <button
+                onClick={() => toggleDay(g.fecha)}
+                className="flex w-full items-center justify-between gap-3 bg-slate-50 px-4 py-3 text-left hover:bg-slate-100"
+              >
+                <div className="flex items-center gap-3">
+                  {isCollapsed ? <ChevronRight className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                  <span className="rounded-full bg-[#131722] px-3 py-1 text-xs font-medium text-white">
+                    {g.fecha === "Sin fecha"
+                      ? "Sin fecha"
+                      : (() => {
+                          const f = new Date(g.fecha + "T00:00:00");
+                          const wd = f.toLocaleDateString("es-AR", { weekday: "long" });
+                          const d = f.toLocaleDateString("es-AR", { day: "2-digit" });
+                          const m = f.toLocaleDateString("es-AR", { month: "long" });
+                          return `${wd}, ${d} de ${m}`;
+                        })()}
+                  </span>
+                  <span className="text-sm font-medium text-slate-700">{g.total} entrega(s)</span>
+                  <span className="text-sm text-slate-400">· {fmt.format(g.monto)}</span>
+                </div>
+                <span className="text-xs text-slate-400">{g.zones.length} zona(s)</span>
+              </button>
+              {!isCollapsed && (
+              <div className="space-y-4 p-4">
                 {g.zones.map((zg) => {
                   const blk = ZONE_BLOCK[zg.zona] || ZONE_BLOCK["Sin zona"];
                   return (
@@ -185,7 +231,7 @@ export default function CalendarioEntregas() {
                       <span className={`inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold ring-1 ${ZONE_STYLE[zg.zona] || ZONE_STYLE["Sin zona"]}`}>
                         <MapPin className="h-3 w-3" /> {zg.zona}
                       </span>
-                      <span className="text-xs font-medium text-slate-500">{zg.items.length} entrega(s)</span>
+                      <span className="text-xs font-medium text-slate-500">{zg.items.length} entrega(s) · {fmt.format(zg.monto)}</span>
                     </div>
                     <div className="divide-y divide-slate-100">
                       {zg.items.map((r) => {
@@ -300,8 +346,10 @@ export default function CalendarioEntregas() {
                   );
                 })}
               </div>
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
