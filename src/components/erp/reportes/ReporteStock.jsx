@@ -1,7 +1,8 @@
 import React, { useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Loader2, Boxes, AlertTriangle, Layers, PackageX } from "lucide-react";
+import { Loader2, Boxes, AlertTriangle, Layers, PackageX, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, PieChart, Pie } from "recharts";
+import { downloadCSV } from "@/lib/csvExport";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -57,8 +58,21 @@ export default function ReporteStock() {
   if (error) return <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">Error: {error}</div>;
   if (!stats.totalProductos) return <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-400">No hay productos en el inventario</div>;
 
+  const exportCSV = () => {
+    downloadCSV(
+      "reporte_stock.csv",
+      ["Producto", "Unidades", "Valor"],
+      stats.topValor.map((p) => [p.nombre, p.unidades, p.valor])
+    );
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-end">
+        <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+          <Download className="h-4 w-4" /> Descargar CSV
+        </button>
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi icon={Boxes} label="Valor de stock" value={fmt.format(stats.valorStock)} sub={`${stats.totalUnidades} unidades`} color="text-slate-600" />
         <Kpi icon={Layers} label="Productos" value={stats.totalProductos} sub={`${stats.publicados} publicados`} color="text-emerald-600" />

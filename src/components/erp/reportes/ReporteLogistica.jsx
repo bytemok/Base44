@@ -1,8 +1,9 @@
 import React, { useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Loader2, Clock, MapPin, PackageCheck, TrendingUp } from "lucide-react";
+import { Loader2, Clock, MapPin, PackageCheck, TrendingUp, Download } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, LineChart, Line } from "recharts";
 import { ZONE_ORDER } from "@/lib/zonas";
+import { downloadCSV } from "@/lib/csvExport";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -60,8 +61,21 @@ export default function ReporteLogistica() {
   if (error) return <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">Error: {error}</div>;
   if (!stats.total) return <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-400">No hay entregas registradas</div>;
 
+  const exportCSV = () => {
+    downloadCSV(
+      "reporte_logistica.csv",
+      ["Zona", "Pedidos", "Enviadas", "Pendientes", "Monto"],
+      stats.zonas.map((z) => [z.zona, z.pedidos, z.enviadas, z.pedidos - z.enviadas, z.monto])
+    );
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-end">
+        <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
+          <Download className="h-4 w-4" /> Descargar CSV
+        </button>
+      </div>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi icon={Clock} label="Cumplimiento" value={`${stats.aTiempo}%`} sub={`${stats.enviadas} de ${stats.total}`} color="text-emerald-600" />
         <Kpi icon={PackageCheck} label="Enviadas" value={stats.enviadas} color="text-emerald-600" />
