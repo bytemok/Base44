@@ -92,12 +92,16 @@
 
   body {
     @apply bg-background text-foreground font-body;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
   }
 
-  button, [role="switch"], thead, h1, h2, h3, h4, .no-select {
+  button, [role="switch"], [role="option"], [role="menuitem"], select, nav a, thead, h1, h2, h3, h4, .no-select {
     -webkit-user-select: none;
     user-select: none;
   }
+
+  .scroll-contain { overscroll-behavior: contain; }
 
   .safe-top { padding-top: env(safe-area-inset-top); }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }

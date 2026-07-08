@@ -1,12 +1,11 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { LayoutGrid, ClipboardList, CalendarDays, Barcode, Settings } from "lucide-react";
+import { LayoutGrid, ClipboardList, ArrowLeftRight, Settings } from "lucide-react";
 
 const TABS = [
-  { to: "/", label: "Inicio", icon: LayoutGrid },
+  { to: "/", label: "Dashboard", icon: LayoutGrid },
   { to: "/pedidos", label: "Pedidos", icon: ClipboardList },
-  { to: "/calendario", label: "Entregas", icon: CalendarDays },
-  { to: "/registro-logistico", label: "Logística", icon: Barcode },
+  { to: "/pick", label: "Pick", icon: ArrowLeftRight },
   { to: "/perfil", label: "Perfil", icon: Settings },
 ];
 
@@ -19,7 +18,7 @@ export default function BottomTabBar() {
         const Icon = t.icon;
         const active = isActive(t.to);
         return (
-          <Link key={t.to} to={t.to} className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${active ? "text-brand" : "text-slate-400"}`}>
+          <Link key={t.to} to={t.to} className={`select-none flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium ${active ? "text-brand" : "text-slate-400"}`}>
             <Icon className="h-5 w-5" />
             {t.label}
           </Link>

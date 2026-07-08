@@ -311,7 +311,7 @@ export default function RegistroLogistico() {
           )}
 
           {partner && Object.keys(productos).length > 0 && (
-            <div className="sticky bottom-4 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+            <div className="safe-bottom sticky bottom-24 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur md:bottom-4">
               <div className="flex-1">
                 {esOut && (
                   <div className="flex items-center gap-2">

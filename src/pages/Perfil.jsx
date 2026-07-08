@@ -68,6 +68,11 @@ export default function Perfil() {
   const eliminarCuenta = async () => {
     setEliminando(true);
     try {
+      await base44.auth.updateMe({
+        notif_alertas_stock: false,
+        notif_recordatorios_entrega: false,
+        notif_novedades: false,
+      });
       await base44.auth.logout();
       window.location.href = "/login";
     } catch (e) {
