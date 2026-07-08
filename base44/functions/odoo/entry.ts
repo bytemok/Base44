@@ -500,13 +500,14 @@ Deno.serve(async (req) => {
       // picks / partners / lines son independientes entre sí -> paralelo para no sumar latencia
       const [picks, partners, lines] = await Promise.all([
         allPickingIds.length ? searchRead("stock.picking", [["id", "in", allPickingIds]], ["id", "state"], null, 200) : Promise.resolve([]),
-        partnerIds.length ? searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city"], null, 300) : Promise.resolve([]),
+        partnerIds.length ? searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city", "phone"], null, 300) : Promise.resolve([]),
         orderIds.length ? searchRead("sale.order.line", [["order_id", "in", orderIds]], ["id", "order_id", "name", "product_id", "product_uom_qty", "qty_delivered"], "sequence", 500) : Promise.resolve([]),
       ]);
       const pickingState = {};
       picks.forEach((p) => (pickingState[p.id] = p.state));
       const partnerCity = {};
-      partners.forEach((p) => { partnerCity[p.id] = p.city || ""; });
+      const partnerPhone = {};
+      partners.forEach((p) => { partnerCity[p.id] = p.city || ""; partnerPhone[p.id] = p.phone || ""; });
       const linesByOrder = {};
       lines.forEach((l) => {
         const oid = Array.isArray(l.order_id) ? l.order_id[0] : null;
@@ -540,12 +541,12 @@ Deno.serve(async (req) => {
             sin_entregar: !delivered,
             listo: states.some((s) => s === "assigned"),
             ciudad: partnerCity[pid] || "",
+            telefono: partnerPhone[pid] || "",
             transporte: carrier,
             zona: zonaDe(partnerCity[pid] || "", carrier),
             productos: linesByOrder[o.id] || [],
           };
-        })
-        .filter((r) => r.sin_entregar);
+        });
       extra.odoo_url = ODOO_URL;
     } else if (resource === "detalle") {
       const orderId = Number(body.order_id);

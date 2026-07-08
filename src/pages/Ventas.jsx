@@ -1,47 +1,100 @@
-import OdooTable from "@/components/erp/OdooTable";
+import React, { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Search, RefreshCw, Inbox } from "lucide-react";
+import { useOdoo } from "@/hooks/useOdoo";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import VentasTable from "@/components/erp/ventas/VentasTable";
+import VentasCard from "@/components/erp/ventas/VentasCard";
+import DetallePedido from "@/components/erp/DetallePedido";
 
-const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
-
-const columns = [
-  { key: "id", label: "Pedido" },
-  { key: "cliente", label: "Cliente" },
-  {
-    key: "productos",
-    label: "Productos",
-    render: (r) => (
-      <div className="flex flex-col gap-0.5">
-        {(r.productos || []).map((p, i) => (
-          <span key={i} className={p.entregado ? "font-medium text-emerald-600" : "text-slate-900"}>
-            {p.nombre}
-          </span>
-        ))}
-      </div>
-    ),
-  },
-  { key: "fecha", label: "Fecha" },
-  { key: "total", label: "Total", className: "text-right", render: (r) => fmt.format(r.total) },
-  { key: "transferencias", label: "Transferencias", className: "text-center" },
-  {
-    key: "sin_entregar",
-    label: "Estado",
-    render: () => (
-      <span className="inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-        Sin entregar
-      </span>
-    ),
-  },
+const TABS = [
+  { id: "lista", label: "Lista para Entregar", filter: (r) => r.sin_entregar && r.listo },
+  { id: "pendiente", label: "Pendiente de Preparar", filter: (r) => r.sin_entregar && !r.listo },
+  { id: "entregados", label: "Entregados", filter: (r) => r.entregado },
 ];
 
 export default function Ventas() {
+  const { data, loading, error, reload } = useOdoo("ventas", undefined, { fresh: true });
+  const [tab, setTab] = useState("pendiente");
+  const [q, setQ] = useState("");
+  const [sp, setSp] = useSearchParams();
+  const detalleId = sp.get("detail");
+  usePullToRefresh(reload);
+
+  const rows = useMemo(() => {
+    const f = TABS.find((t) => t.id === tab)?.filter || (() => true);
+    let out = data.filter(f);
+    if (q.trim()) {
+      const t = q.toLowerCase();
+      out = out.filter((r) => (r.id || "").toLowerCase().includes(t) || (r.cliente || "").toLowerCase().includes(t));
+    }
+    return out;
+  }, [data, tab, q]);
+
+  const openDetalle = (id) => { const n = new URLSearchParams(sp); n.set("detail", id); setSp(n); };
+  const closeDetalle = () => { const n = new URLSearchParams(sp); n.delete("detail"); setSp(n, { replace: true }); };
+
   return (
-    <OdooTable
-      resource="ventas"
-      title="Ventas"
-      subtitle="Órdenes confirmadas pendientes de entrega · Odoo"
-      columns={columns}
-      searchKeys={["id", "cliente"]}
-      detailIdKey="db_id"
-      fresh
-    />
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">Ventas</h1>
+          <p className="mt-1 text-sm text-slate-500">Órdenes confirmadas · Odoo</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar pedido o cliente..."
+              className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 sm:w-64"
+            />
+          </div>
+          <button onClick={reload} disabled={loading} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50" title="Actualizar">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex gap-1 overflow-x-auto border-b border-slate-200">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition ${tab === t.id ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">Error al consultar Odoo: {error}</div>
+      ) : loading && !rows.length ? (
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-800" />
+        </div>
+      ) : !rows.length ? (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-slate-400">
+          <Inbox className="h-8 w-8" />
+          <p className="text-sm">Sin datos para mostrar</p>
+        </div>
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <VentasTable rows={rows} onOpen={openDetalle} />
+          </div>
+          <div className="space-y-2 md:hidden">
+            {rows.map((r, i) => (
+              <VentasCard key={i} r={r} onOpen={openDetalle} />
+            ))}
+          </div>
+          <p className="text-xs text-slate-400">{rows.length} registros · Sincronizado con Odoo</p>
+        </>
+      )}
+
+      {detalleId && <DetallePedido orderId={detalleId} onClose={closeDetalle} />}
+    </div>
   );
 }
