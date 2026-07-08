@@ -119,7 +119,7 @@ export default function PickInPickOut() {
     if (!lineas.length) { setError("Escaneá al menos un producto"); return; }
     setValidando(true);
     setError(null);
-    setResultado(null);
+    setResultado({ procesando: true, lineas: lineas.length });
     try {
       const res = await base44.functions.invoke("odoo", {
         resource: "pickings_crear",
@@ -136,6 +136,7 @@ export default function PickInPickOut() {
       }
       setResultado({ picking: d, pago, lineas: lineas.length });
     } catch (e) {
+      setResultado(null);
       setError(e?.response?.data?.error || e?.message || "Error al validar");
     } finally {
       setValidando(false);
@@ -323,13 +324,21 @@ export default function PickInPickOut() {
           {/* Resultado */}
           {resultado && (
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-              <div className="flex items-center gap-2 font-semibold">
-                <CheckCircle2 className="h-5 w-5" /> Validado en Odoo: {resultado.picking?.name} ({resultado.picking?.estado})
-              </div>
-              {resultado.pago && (
-                <p className="mt-1">Pago registrado en Caja Deposito · {fmt.format(total)}</p>
+              {resultado.procesando ? (
+                <div className="flex items-center gap-2 font-semibold">
+                  <Loader2 className="h-5 w-5 animate-spin" /> Procesando validación en Odoo…
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 font-semibold">
+                    <CheckCircle2 className="h-5 w-5" /> Validado en Odoo: {resultado.picking?.name} ({resultado.picking?.estado})
+                  </div>
+                  {resultado.pago && (
+                    <p className="mt-1">Pago registrado en Caja Deposito · {fmt.format(total)}</p>
+                  )}
+                  <button onClick={reiniciar} className="mt-3 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50">Nueva operación</button>
+                </>
               )}
-              <button onClick={reiniciar} className="mt-3 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50">Nueva operación</button>
             </div>
           )}
         </>
