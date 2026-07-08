@@ -1,6 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import { MODULES } from "@/components/erp/modules";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import AnalisisLogistico from "@/components/erp/AnalisisLogistico";
 import ResumenReportes from "@/components/erp/ResumenReportes";
 
@@ -17,6 +19,8 @@ function AppTile({ module }) {
 }
 
 export default function Dashboard() {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const refreshing = usePullToRefresh(async () => setRefreshKey((k) => k + 1));
   const greeting = useMemo(() => {
     const h = new Date().getHours();
     if (h < 12) return "Buenos días";
@@ -34,8 +38,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <AnalisisLogistico />
-      <ResumenReportes />
+      {refreshing && (
+        <div className="flex justify-center py-2">
+          <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+        </div>
+      )}
+
+      <AnalisisLogistico key={refreshKey} />
+      <ResumenReportes key={refreshKey} />
     </div>
   );
 }

@@ -98,12 +98,18 @@ export default function Pedidos() {
   };
 
   const handleStatusChange = async (pedido, newStatus) => {
+    const prevStatus = pedido.status;
     setUpdatingId(pedido.id);
+    setPedidos((prev) =>
+      prev.map((p) => (p.id === pedido.id ? { ...p, status: newStatus } : p))
+    );
     try {
       await base44.entities.Pedido.update(pedido.id, { status: newStatus });
+    } catch (e) {
       setPedidos((prev) =>
-        prev.map((p) => (p.id === pedido.id ? { ...p, status: newStatus } : p))
+        prev.map((p) => (p.id === pedido.id ? { ...p, status: prevStatus } : p))
       );
+      alert("No se pudo actualizar el estado: " + (e?.message || e));
     } finally {
       setUpdatingId(null);
     }

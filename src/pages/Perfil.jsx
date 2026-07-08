@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { User, Bell, Palette, Loader2, Check, Sun, Moon, Trash2, AlertTriangle, X } from "lucide-react";
+import { User, Bell, Palette, Loader2, Check, Sun, Moon, Monitor, Trash2, AlertTriangle, X } from "lucide-react";
 
 const ROLES = { admin: "Administrador", user: "Empleado" };
 
@@ -39,9 +39,19 @@ export default function Perfil() {
 
   const applyTema = (tema) => {
     const root = document.documentElement;
-    if (tema === "oscuro") root.classList.add("dark");
+    const dark = tema === "oscuro" || (tema === "automatico" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    if (dark) root.classList.add("dark");
     else root.classList.remove("dark");
   };
+
+  useEffect(() => {
+    if (prefs.tema !== "automatico") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => applyTema("automatico");
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefs.tema]);
 
   const setTema = (tema) => {
     setPrefs((p) => ({ ...p, tema }));
@@ -142,7 +152,7 @@ export default function Perfil() {
         <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
           <Palette className="h-4 w-4 text-slate-400" /> Tema de visualización
         </h3>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           <button
             onClick={() => setTema("claro")}
             className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${prefs.tema === "claro" ? "border-emerald-400 bg-emerald-50" : "border-slate-200 hover:bg-slate-50"}`}
@@ -161,6 +171,16 @@ export default function Perfil() {
             <div>
               <p className="text-sm font-medium text-slate-800">Oscuro</p>
               <p className="text-xs text-slate-400">Interfaz oscura</p>
+            </div>
+          </button>
+          <button
+            onClick={() => setTema("automatico")}
+            className={`flex items-center gap-3 rounded-xl border p-4 text-left transition ${prefs.tema === "automatico" ? "border-emerald-400 bg-emerald-50" : "border-slate-200 hover:bg-slate-50"}`}
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600"><Monitor className="h-5 w-5" /></div>
+            <div>
+              <p className="text-sm font-medium text-slate-800">Automático</p>
+              <p className="text-xs text-slate-400">Según el sistema</p>
             </div>
           </button>
         </div>
