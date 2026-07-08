@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
 import { Search, Package, Eye, EyeOff, Pencil, RefreshCw } from "lucide-react";
 import EditarProducto from "@/components/erp/EditarProducto";
+import { useSearchParams } from "react-router-dom";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -16,7 +17,11 @@ export default function Productos() {
   const { data, loading, error, reload } = useOdoo("catalogo", 100);
   const [q, setQ] = useState("");
   const [filtro, setFiltro] = useState("todos");
-  const [editando, setEditando] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const editandoId = searchParams.get("editar");
+  const editando = useMemo(() => data.find((p) => String(p.product_id) === editandoId) || null, [data, editandoId]);
+  const openEditar = (p) => { const n = new URLSearchParams(searchParams); n.set("editar", String(p.product_id)); setSearchParams(n); };
+  const closeEditar = () => { const n = new URLSearchParams(searchParams); n.delete("editar"); setSearchParams(n, { replace: true }); };
 
   const filtered = useMemo(() => {
     let arr = data;
@@ -83,7 +88,7 @@ export default function Productos() {
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-900">{fmt.format(p.precio)}</span>
-                  <button onClick={() => setEditando(p)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">
+                  <button onClick={() => openEditar(p)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">
                     <Pencil className="h-3 w-3" /> Editar
                   </button>
                 </div>
@@ -94,7 +99,7 @@ export default function Productos() {
       )}
 
       {editando && (
-        <EditarProducto product={editando} onClose={() => setEditando(null)} onSaved={() => { setEditando(null); reload(); }} />
+        <EditarProducto product={editando} onClose={closeEditar} onSaved={() => { closeEditar(); reload(); }} />
       )}
     </div>
   );

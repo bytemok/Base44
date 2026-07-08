@@ -17,6 +17,7 @@ export default function Compras() {
   const [supSel, setSupSel] = useState({});
   const [generating, setGenerating] = useState(false);
   const [resultados, setResultados] = useState(null);
+  const [procesando, setProcesando] = useState(new Set());
   usePullToRefresh(reload);
 
   const proveedorNombre = (id) => (proveedores || []).find((p) => p.id === id)?.nombre || "";
@@ -60,6 +61,8 @@ export default function Compras() {
     const sinProveedor = rows.filter((r) => !(supSel[r.product_id] || r.proveedor_id));
     if (!rows.length) return;
     const res = [];
+    setProcesando(new Set(rows.map((r) => r.product_id)));
+    setSelected(new Set());
     setGenerating(true);
     for (const [sidStr, lineas] of Object.entries(bySupplier)) {
       const sid = Number(sidStr);
@@ -73,10 +76,10 @@ export default function Compras() {
     sinProveedor.forEach((r) => res.push({ proveedor: "—", ok: false, error: `Sin proveedor: ${r.nombre}` }));
     setResultados(res);
     setGenerating(false);
-    setSelected(new Set());
     setQtys({});
     setSupSel({});
-    reload();
+    await reload();
+    setProcesando(new Set());
   };
 
   return (
@@ -143,7 +146,7 @@ export default function Compras() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.map((r) => (
-                  <tr key={r.product_id} className={selected.has(r.product_id) ? "bg-slate-50" : "hover:bg-slate-50"}>
+                  <tr key={r.product_id} className={procesando.has(r.product_id) ? "opacity-50 bg-amber-50" : selected.has(r.product_id) ? "bg-slate-50" : "hover:bg-slate-50"}>
                     <td className="px-3 py-2.5">
                       <input
                         type="checkbox"

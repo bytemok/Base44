@@ -22,6 +22,7 @@ export default function Recepciones() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(new Set());
   const [recibiendo, setRecibiendo] = useState(false);
+  const [procesando, setProcesando] = useState(new Set());
   const [searchParams, setSearchParams] = useSearchParams();
   const detalleId = searchParams.get("detail");
   const openDetalle = (id) => {
@@ -37,13 +38,14 @@ export default function Recepciones() {
   usePullToRefresh(reload);
 
   const filtered = useMemo(() => {
-    if (!q.trim()) return data;
+    let arr = procesando.size ? data.filter((r) => !procesando.has(r.picking_id)) : data;
+    if (!q.trim()) return arr;
     const t = q.toLowerCase();
-    return data.filter((r) =>
+    return arr.filter((r) =>
       [r.referencia, r.origen, r.proveedor, ...(r.productos || []).map((p) => p.producto)]
         .join(" ").toLowerCase().includes(t)
     );
-  }, [data, q]);
+  }, [data, q, procesando]);
 
   const ids = useMemo(() => Array.from(selected), [selected]);
   const allSel = filtered.length > 0 && filtered.every((r) => selected.has(r.picking_id));
@@ -66,6 +68,9 @@ export default function Recepciones() {
   const recibir = async () => {
     if (!ids.length) return;
     if (!confirm(`¿Dar ingreso a ${ids.length} recepción(es)? Se validan en Odoo.`)) return;
+    const optimistas = new Set(ids);
+    setProcesando((p) => new Set([...p, ...optimistas]));
+    setSelected(new Set());
     setRecibiendo(true);
     try {
       const d = (await base44.functions.invoke("odoo", { resource: "recibir_pickings", ids })).data || {};
@@ -73,10 +78,11 @@ export default function Recepciones() {
       alert(fallidos.length
         ? `Ingresadas: ${ok.length} · Fallidas: ${fallidos.length}\n` + fallidos.map((f) => `${f.id}: ${f.error}`).join("\n")
         : `Ingreso confirmado: ${ok.length} recepción(es).`);
-      setSelected(new Set());
-      reload();
+      await reload();
+      setProcesando(new Set());
     } catch (e) {
       alert("Error: " + (e?.message || e));
+      setProcesando(new Set());
     } finally {
       setRecibiendo(false);
     }
