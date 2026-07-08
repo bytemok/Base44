@@ -35,8 +35,8 @@ export default function VentasTable({ rows, onOpen }) {
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-800 uppercase">{r.cliente}</td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-500">{r.telefono || "—"}</td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-500">{r.ciudad || "—"}</td>
-                <td className="border border-slate-200 px-2 py-1.5 text-slate-800 min-w-[360px] max-w-[620px]">
-                  <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                <td className="border border-slate-200 px-2 py-1.5 text-slate-800 min-w-[360px] whitespace-nowrap">
+                  <div className="flex items-baseline gap-x-1.5 whitespace-nowrap">
                     {(r.productos || []).map((p, j) => (
                       <React.Fragment key={j}>
                         {j > 0 && <span className="text-slate-300">+</span>}
