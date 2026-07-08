@@ -739,6 +739,75 @@ Deno.serve(async (req) => {
       const payId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "create", [vals]] });
       await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[payId]]] });
       return Response.json({ resource: "registrar_pago_caja", payment_id: payId, journal_id: journal.id });
+    } else if (resource === "entregas_calendario") {
+      const ZONAS = {
+        norte: ["vicente lópez","vicente lopez","san isidro","tigre","san martín","san martin","tres de febrero","3 de febrero","pilar","escobar","malvinas argentinas","josé c. paz","jose c. paz","san miguel","zárate","zarate","campana","maschwitz","nordelta","puerto madryn","benavídez","benavidez","escobar","del viso","la lucila","olivos","martínez","martinez","acassuso","beccar","carupá","carupa"],
+        sur: ["avellaneda","lanús","lanus","quilmes","berazategui","florencio varela","almirante brown","lomas de zamora","esteban echeverría","ezeiza","presidente perón","presidente peron","la plata","berisso","ensenada","cañuelas","brandsen","gutiérrez","gutierrez","don orazio","city bell","gonnet","tolosa","villa elisa","villa ballester"],
+        oeste: ["morón","moron","ituzaingó","ituzaingo","hurlingham","la matanza","merlo","moreno","general las heras","marcos paz","luján","lujan","navarro","rodríguez","rodriguez","haedo","ramos mejía","ramos mejia","san justo","ciudadela","caseros","el palomar","villa luzuriaga","isidro casanova","gregorio de laferrere","rafael castillo","libertad","pasco","tristán suárez","tristan suarez"],
+        caba: ["capital federal","caba","c.a.b.a.","c.a.b.a","ciudad autónoma","ciudad autonoma","buenos aires","capital","palermo","belgrano","caballito","flores","devoto","nuñez","nunez","recoleta","almagro","villa crespo","balvanera","boedo","san telmo","la boca","mataderos","liniers","versalles","villa urquiza","villa devoto","monte castro","villa real","versalles","agronomía","parque chas","colegiales","núñez"]
+      };
+      const zonaPorCiudad = (city) => {
+        const c = (city || "").toLowerCase().trim();
+        if (!c) return "CABA";
+        for (const [z, cities] of Object.entries(ZONAS)) {
+          if (cities.some((x) => c === x || c.includes(x) || x.includes(c))) {
+            return z === "norte" ? "Zona Norte" : z === "sur" ? "Zona Sur" : z === "oeste" ? "Zona Oeste" : "CABA";
+          }
+        }
+        return "CABA";
+      };
+      const zonaDe = (city, carrier) => {
+        if (/andreani|expreso|expresa|expresos|correo|oca|andreani/i.test(carrier || "")) return "Andreani/Expresos";
+        return zonaPorCiudad(city);
+      };
+      const recs = await base44.asServiceRole.entities.EntregaProgramada.list("-fecha_entrega");
+      const orderIds = (recs || []).map((r) => Number(r.odoo_order_id)).filter(Boolean);
+      const orders = orderIds.length ? await searchRead("sale.order", [["id", "in", orderIds]], ["id", "name", "partner_id", "carrier_id", "picking_ids"], null, 200) : [];
+      const orderMap = {};
+      const partnerIds = [];
+      const allPickIds = [];
+      orders.forEach((o) => {
+        const pid = Array.isArray(o.partner_id) ? o.partner_id[0] : null;
+        orderMap[o.id] = { name: o.name, partner_id: pid, carrier: m2o(o.carrier_id), picking_ids: o.picking_ids || [] };
+        if (pid) partnerIds.push(pid);
+        (o.picking_ids || []).forEach((x) => allPickIds.push(x));
+      });
+      const partnerMap = {};
+      if (partnerIds.length) {
+        const partners = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city", "phone"], null, 300);
+        partners.forEach((p) => { partnerMap[p.id] = { city: p.city || "", phone: p.phone || "" }; });
+      }
+      const pickState = {};
+      if (allPickIds.length) {
+        const picks = await searchRead("stock.picking", [["id", "in", Array.from(new Set(allPickIds))]], ["id", "state"], null, 300);
+        picks.forEach((p) => { pickState[p.id] = p.state; });
+      }
+      rows = (recs || []).map((r) => {
+        const o = orderMap[Number(r.odoo_order_id)] || {};
+        const partner = partnerMap[o.partner_id] || {};
+        const pids = o.picking_ids || [];
+        const states = pids.map((id) => pickState[id] || "draft");
+        const enviada = pids.length > 0 && states.every((s) => s === "done");
+        const listo = pids.length > 0 && states.some((s) => s === "assigned");
+        return {
+          id: r.id,
+          order_ref: r.order_ref,
+          cliente: r.cliente,
+          total: r.total,
+          fecha_entrega: r.fecha_entrega,
+          odoo_order_id: r.odoo_order_id,
+          invoice_ids: r.invoice_ids,
+          picking_ids: r.picking_ids,
+          notas: r.notas,
+          estado: r.estado,
+          ciudad: partner.city || "",
+          telefono: partner.phone || "",
+          transporte: o.carrier || "",
+          zona: zonaDe(partner.city, o.carrier),
+          enviada,
+          listo,
+        };
+      });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }

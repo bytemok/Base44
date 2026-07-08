@@ -1,72 +1,79 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Printer, FileText, Package, Eye, Tags, CalendarDays } from "lucide-react";
+import { Printer, FileText, Package, Eye, Tags, CalendarDays, MessageCircle, CheckCircle2, MapPin } from "lucide-react";
 import DetallePedido from "@/components/erp/DetallePedido";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 const safeParse = (s) => {
-  try {
-    return JSON.parse(s || "[]");
-  } catch {
-    return [];
-  }
+  try { return JSON.parse(s || "[]"); } catch { return []; }
+};
+
+const ZONE_ORDER = ["Zona Oeste", "Zona Sur", "CABA", "Andreani/Expresos", "Zona Norte"];
+const ZONE_STYLE = {
+  "Zona Oeste": "bg-amber-50 text-amber-700 ring-amber-200",
+  "Zona Sur": "bg-sky-50 text-sky-700 ring-sky-200",
+  "CABA": "bg-violet-50 text-violet-700 ring-violet-200",
+  "Andreani/Expresos": "bg-rose-50 text-rose-700 ring-rose-200",
+  "Zona Norte": "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  "Sin zona": "bg-slate-100 text-slate-600 ring-slate-200",
+};
+
+const RESENA = `Hola, ¿cómo estás? Te escribimos de Todo en Muebles. Queríamos saber si quedaste conforme con el producto recibido. Respondé con una opción:
+1. Muy satisfecho
+2. Satisfecho
+3. Poco satisfecho
+4. No satisfecho
+Gracias por tu compra y por ayudarnos a mejorar.`;
+
+const waNumber = (tel) => {
+  let n = (tel || "").replace(/\D/g, "");
+  if (!n) return "";
+  if (n.startsWith("549")) return n;
+  if (n.startsWith("54") && n.length >= 12) return n;
+  if (n.startsWith("9")) return "54" + n;
+  if (n.startsWith("0")) n = n.slice(1);
+  if (n.length === 10 && n.startsWith("11")) return "549" + n;
+  return "549" + n;
+};
+const waLink = (num, text) => (num ? `https://wa.me/${num}?text=${encodeURIComponent(text)}` : "");
+const fmtFecha = (s) => {
+  if (!s) return "";
+  const f = new Date(s + "T00:00:00");
+  return f.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" });
 };
 
 export default function CalendarioEntregas() {
-  const { data: sinEntregar, meta, loading: sinLoading, error: sinError } = useOdoo("ventas");
+  const { data, meta, loading, error } = useOdoo("entregas_calendario");
   const odooUrl = meta?.odoo_url || "";
-
-  const [recs, setRecs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(new Set());
   const [detalleOrderId, setDetalleOrderId] = useState(null);
+  const [zonaFiltro, setZonaFiltro] = useState("Todas");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const list = await base44.entities.EntregaProgramada.list("-fecha_entrega");
-      setRecs(Array.isArray(list) ? list : []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // Mantener estado: marcar Entregada a las que ya salieron en Odoo
   useEffect(() => {
-    load();
-  }, [load]);
-
-  // Auto-limpieza: si una orden dejó de estar "sin entregar" (se entregó en Odoo), marcar Entregada
-  const sinEntregarRefs = useMemo(() => new Set(sinEntregar.map((s) => s.id)), [sinEntregar]);
-  useEffect(() => {
-    if (sinLoading || sinError) return;
-    if (!recs.length) return;
-    const toUpdate = recs.filter(
-      (r) => r.estado === "Programada" && !sinEntregarRefs.has(r.order_ref)
-    );
+    if (loading || error) return;
+    const toUpdate = (data || []).filter((r) => r.enviada && r.estado === "Programada");
     if (toUpdate.length) {
       Promise.all(
-        toUpdate.map((r) =>
-          base44.entities.EntregaProgramada.update(r.id, { estado: "Entregada" })
-        )
-      ).then(() => load());
+        toUpdate.map((r) => base44.entities.EntregaProgramada.update(r.id, { estado: "Entregada" }))
+      ).catch(() => {});
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sinEntregarRefs, sinLoading, sinError]);
+  }, [data, loading, error]);
 
-  const programadas = useMemo(() => recs.filter((r) => r.estado === "Programada"), [recs]);
+  const zonasDisponibles = useMemo(() => {
+    const presentes = new Set((data || []).map((r) => r.zona || "Sin zona"));
+    return [
+      "Todas",
+      ...ZONE_ORDER.filter((z) => presentes.has(z)),
+      ...Array.from(presentes).filter((z) => !ZONE_ORDER.includes(z)),
+    ];
+  }, [data]);
 
-  // Solo entregas listas para entregar (stock disponible / entradas validadas en Odoo)
-  const listoMap = useMemo(() => {
-    const m = {};
-    sinEntregar.forEach((s) => { m[s.id] = !!s.listo; });
-    return m;
-  }, [sinEntregar]);
-
-  const visibles = useMemo(() => {
-    if (sinLoading || sinError) return programadas;
-    return programadas.filter((r) => listoMap[r.order_ref]);
-  }, [programadas, listoMap, sinLoading, sinError]);
+  const visibles = useMemo(
+    () => (zonaFiltro === "Todas" ? data || [] : (data || []).filter((r) => (r.zona || "Sin zona") === zonaFiltro)),
+    [data, zonaFiltro]
+  );
 
   const toggle = (id) =>
     setSelected((prev) => {
@@ -93,14 +100,24 @@ export default function CalendarioEntregas() {
   };
 
   const grouped = useMemo(() => {
-    const m = {};
+    const byDay = {};
     visibles.forEach((r) => {
-      (m[r.fecha_entrega] = m[r.fecha_entrega] || []).push(r);
+      const z = r.zona || "Sin zona";
+      (byDay[r.fecha_entrega] = byDay[r.fecha_entrega] || {});
+      (byDay[r.fecha_entrega][z] = byDay[r.fecha_entrega][z] || []).push(r);
     });
-    return Object.keys(m)
-      .sort()
-      .map((k) => ({ fecha: k, items: m[k] }));
+    return Object.keys(byDay).sort().map((fecha) => ({
+      fecha,
+      zones: Object.keys(byDay[fecha])
+        .sort((a, b) => {
+          const ia = ZONE_ORDER.indexOf(a), ib = ZONE_ORDER.indexOf(b);
+          return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+        })
+        .map((z) => ({ zona: z, items: byDay[fecha][z] })),
+    }));
   }, [visibles]);
+
+  const enviadasCount = (data || []).filter((r) => r.enviada).length;
 
   return (
     <div className="space-y-5">
@@ -108,7 +125,7 @@ export default function CalendarioEntregas() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Calendario de Entregas</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Entregas listas para entregar · {visibles.length} pendientes
+            Entregas coordinadas · {(data || []).length} totales · {enviadasCount} enviadas
           </p>
         </div>
         <button
@@ -120,17 +137,34 @@ export default function CalendarioEntregas() {
         </button>
       </div>
 
+      {/* Filtro por zona */}
+      <div className="flex flex-wrap gap-2">
+        {zonasDisponibles.map((z) => (
+          <button
+            key={z}
+            onClick={() => setZonaFiltro(z)}
+            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+              zonaFiltro === z ? "bg-slate-900 text-white" : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {z}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex h-64 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-800" />
         </div>
-      ) : visibles.length === 0 ? (
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">Error: {error}</div>
+      ) : grouped.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-slate-400">
           <CalendarDays className="h-8 w-8" />
-          <p className="text-sm">No hay entregas listas para entregar</p>
+          <p className="text-sm">No hay entregas coordinadas</p>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {grouped.map((g) => (
             <div key={g.fecha}>
               <div className="mb-3 flex justify-center">
@@ -144,84 +178,126 @@ export default function CalendarioEntregas() {
                   })()}
                 </span>
               </div>
-              <div className="space-y-2">
-                {g.items.map((r) => {
-                  const invIds = safeParse(r.invoice_ids);
-                  const pickIds = safeParse(r.picking_ids);
-                  return (
-                    <div
-                      key={r.id}
-                      className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between"
-                    >
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={selected.has(r.id)}
-                          onChange={() => toggle(r.id)}
-                          className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600"
-                        />
-                        <div>
-                          <span className="font-mono text-xs font-medium text-slate-500">
-                            {r.order_ref}
-                          </span>
-                          <p className="font-medium text-slate-900">{r.cliente}</p>
-                          <p className="text-xs text-slate-500">
-                            {fmt.format(r.total)} · {invIds.length} factura(s) · {pickIds.length}{" "}
-                            transferencia(s)
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() => setDetalleOrderId(r.odoo_order_id)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                        >
-                          <Eye className="h-3.5 w-3.5" /> Detalle
-                        </button>
-                        {odooUrl && invIds.length > 0 && (
-                          <a
-                            href={`${odooUrl}/report/pdf/account.report_invoice_with_payments/${invIds.join(",")}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                          >
-                            <FileText className="h-3.5 w-3.5" /> Factura
-                          </a>
-                        )}
-                        {odooUrl && pickIds.length > 0 && (
-                          <>
-                            <a
-                              href={`${odooUrl}/report/pdf/stock.report_picking/${pickIds.join(",")}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                            >
-                              <Package className="h-3.5 w-3.5" /> Remito
-                            </a>
-                            <a
-                              href={`${odooUrl}/report/pdf/stock.report_delivery_label/${pickIds.join(",")}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                            >
-                              <Tags className="h-3.5 w-3.5" /> Etiquetas
-                            </a>
-                          </>
-                        )}
-                        {odooUrl && (
-                          <a
-                            href={`${odooUrl}/report/pdf/sale.report_saleorder/${r.odoo_order_id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                          >
-                            <Printer className="h-3.5 w-3.5" /> Orden
-                          </a>
-                        )}
-                      </div>
+              <div className="space-y-5">
+                {g.zones.map((zg) => (
+                  <div key={zg.zona}>
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${ZONE_STYLE[zg.zona] || ZONE_STYLE["Sin zona"]}`}>
+                        <MapPin className="h-3 w-3" /> {zg.zona}
+                      </span>
+                      <span className="text-xs text-slate-400">{zg.items.length} entrega(s)</span>
                     </div>
-                  );
-                })}
+                    <div className="space-y-2">
+                      {zg.items.map((r) => {
+                        const invIds = safeParse(r.invoice_ids);
+                        const pickIds = safeParse(r.picking_ids);
+                        const wa = waNumber(r.telefono);
+                        return (
+                          <div
+                            key={r.id}
+                            className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 lg:flex-row lg:items-center lg:justify-between"
+                          >
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selected.has(r.id)}
+                                onChange={() => toggle(r.id)}
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600"
+                              />
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="font-mono text-xs font-medium text-slate-500">{r.order_ref}</span>
+                                  {r.enviada ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200">
+                                      <CheckCircle2 className="h-3 w-3" /> Enviada
+                                    </span>
+                                  ) : r.listo ? (
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200">
+                                      Listo para entregar
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <p className="font-medium text-slate-900">{r.cliente}</p>
+                                <p className="text-xs text-slate-500">
+                                  {fmt.format(r.total)} · {invIds.length} factura(s) · {pickIds.length} transferencia(s)
+                                </p>
+                                {r.ciudad && <p className="text-xs text-slate-400">{r.ciudad}{r.transporte ? ` · ${r.transporte}` : ""}</p>}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                onClick={() => setDetalleOrderId(r.odoo_order_id)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                              >
+                                <Eye className="h-3.5 w-3.5" /> Detalle
+                              </button>
+                              {odooUrl && invIds.length > 0 && (
+                                <a
+                                  href={`${odooUrl}/report/pdf/account.report_invoice_with_payments/${invIds.join(",")}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                                >
+                                  <FileText className="h-3.5 w-3.5" /> Factura
+                                </a>
+                              )}
+                              {odooUrl && pickIds.length > 0 && (
+                                <>
+                                  <a
+                                    href={`${odooUrl}/report/pdf/stock.report_picking/${pickIds.join(",")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                                  >
+                                    <Package className="h-3.5 w-3.5" /> Remito
+                                  </a>
+                                  <a
+                                    href={`${odooUrl}/report/pdf/stock.report_delivery_label/${pickIds.join(",")}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                                  >
+                                    <Tags className="h-3.5 w-3.5" /> Etiquetas
+                                  </a>
+                                </>
+                              )}
+                              {odooUrl && (
+                                <a
+                                  href={`${odooUrl}/report/pdf/sale.report_saleorder/${r.odoo_order_id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                                >
+                                  <Printer className="h-3.5 w-3.5" /> Orden
+                                </a>
+                              )}
+                              {wa && r.enviada && (
+                                <a
+                                  href={waLink(wa, RESENA)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"
+                                >
+                                  <MessageCircle className="h-3.5 w-3.5" /> Pedir Reseña
+                                </a>
+                              )}
+                              {wa && !r.enviada && (
+                                <a
+                                  href={waLink(wa, `Hola ${r.cliente}! Te confirmamos la entrega de tu pedido ${r.order_ref} para el ${fmtFecha(r.fecha_entrega)}. Cualquier consulta, estamos a tu disposición. Todo en Muebles.`)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1.5 rounded-lg bg-green-500 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-green-600"
+                                >
+                                  <MessageCircle className="h-3.5 w-3.5" /> Confirmar fecha
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
