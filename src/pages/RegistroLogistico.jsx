@@ -4,6 +4,7 @@ import {
   ArrowDownToLine, ArrowUpFromLine, ScanLine, Search, Plus, Minus,
   Loader2, CheckCircle2, ArrowLeft, User, X, Wallet, AlertTriangle, Boxes,
 } from "lucide-react";
+import EscannerCamara from "@/components/erp/EscannerCamara";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -92,6 +93,29 @@ export default function RegistroLogistico() {
       setError(null);
     } else setError(`Producto no encontrado: ${code}`);
     setProdInput("");
+  };
+
+  const detectCliente = (code) => {
+    const match = clientes.find((c) => (c.ref && c.ref === code) || (c.cuit && c.cuit === code));
+    if (match) seleccionarCliente(match);
+    else { setClientQuery(code); setError(`Cliente no encontrado: ${code}`); }
+  };
+  const detectProducto = (code) => {
+    const prod = porBarcode[code];
+    if (prod) {
+      setProductos((p) => ({
+        ...p,
+        [code]: {
+          product_id: prod.product_id,
+          nombre: prod.nombre,
+          qty: (p[code]?.qty || 0) + 1,
+          precio: prod.precio || 0,
+          disponible: prod.esperado || 0,
+          atributos: prod.atributos || [],
+        },
+      }));
+      setError(null);
+    } else setError(`Producto no encontrado: ${code}`);
   };
 
   const inc = (code, d) => setProductos((p) => ({ ...p, [code]: { ...p[code], qty: Math.max(0, (p[code]?.qty || 0) + d) } }));
@@ -198,15 +222,18 @@ export default function RegistroLogistico() {
               <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
                 <ScanLine className="h-4 w-4 text-slate-400" /> Escanear código de cliente o buscar por nombre
               </label>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  ref={clientRef}
-                  value={clientQuery}
-                  onChange={(e) => setClientQuery(e.target.value)}
-                  placeholder="Código (ref/CUIT) o nombre..."
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 py-2.5 text-sm outline-none focus:border-slate-400 focus:bg-white"
-                />
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    ref={clientRef}
+                    value={clientQuery}
+                    onChange={(e) => setClientQuery(e.target.value)}
+                    placeholder="Código (ref/CUIT) o nombre..."
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-8 pr-3 py-2.5 text-sm outline-none focus:border-slate-400 focus:bg-white"
+                  />
+                </div>
+                <EscannerCamara title="Escanear cliente" label="Cámara" onDetect={detectCliente} />
               </div>
               {clientQuery.trim() && (
                 <div className="mt-2 divide-y divide-slate-100 rounded-lg border border-slate-100">
@@ -228,13 +255,16 @@ export default function RegistroLogistico() {
               <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
                 <ScanLine className="h-4 w-4 text-emerald-600" /> Escanear productos
               </label>
-              <input
-                ref={prodRef}
-                value={prodInput}
-                onChange={(e) => setProdInput(e.target.value)}
-                placeholder="Enfocá el lector o escribí el código..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 font-mono text-base outline-none focus:border-emerald-400 focus:bg-white"
-              />
+              <div className="flex gap-2">
+                <input
+                  ref={prodRef}
+                  value={prodInput}
+                  onChange={(e) => setProdInput(e.target.value)}
+                  placeholder="Enfocá el lector o escribí el código..."
+                  className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 font-mono text-base outline-none focus:border-emerald-400 focus:bg-white"
+                />
+                <EscannerCamara title="Escanear producto" label="Cámara" onDetect={detectProducto} />
+              </div>
             </form>
           )}
 
