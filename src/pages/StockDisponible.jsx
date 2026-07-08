@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Search, Package, PackageCheck, ChevronDown } from "lucide-react";
+import { Search, Package, PackageCheck, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -8,11 +8,13 @@ export default function StockDisponible() {
   const { data, loading, error } = useOdoo("inventario", 200);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(new Set());
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 30;
 
   const filas = useMemo(() => {
     let arr = data
       .map((t) => ({ ...t, stockTotal: (t.variantes || []).reduce((s, v) => s + (v.stock || 0), 0) }))
-      .filter((t) => t.publicado && t.stockTotal > 0)
+      .filter((t) => t.stockTotal > 0)
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
     if (q.trim()) {
       const t = q.toLowerCase();
@@ -21,7 +23,11 @@ export default function StockDisponible() {
     return arr;
   }, [data, q]);
 
+  useEffect(() => { setPage(1); }, [q]);
+
   const totalUnidades = useMemo(() => filas.reduce((s, t) => s + t.stockTotal, 0), [filas]);
+  const totalPages = Math.max(1, Math.ceil(filas.length / PAGE_SIZE));
+  const paginadas = filas.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const toggle = (id) =>
     setOpen((prev) => {
@@ -36,7 +42,7 @@ export default function StockDisponible() {
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Stock disponible</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Productos publicados y disponibles para vender · {filas.length} producto(s) · {totalUnidades} unidades
+            Productos disponibles para vender · {filas.length} producto(s) · {totalUnidades} unidades
           </p>
         </div>
         <div className="relative sm:w-72">
@@ -63,7 +69,7 @@ export default function StockDisponible() {
         </div>
       ) : (
         <div className="space-y-2.5">
-          {filas.map((p) => {
+          {paginadas.map((p) => {
             const isOpen = open.has(p.tmpl_id);
             const variantesStock = (p.variantes || []).filter((v) => v.stock > 0);
             const single = variantesStock.length <= 1;
@@ -125,6 +131,26 @@ export default function StockDisponible() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-slate-200 pt-4">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+          >
+            <ChevronLeft className="h-4 w-4" /> Anterior
+          </button>
+          <span className="text-sm text-slate-500">Página {page} de {totalPages}</span>
+          <button
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40"
+          >
+            Siguiente <ChevronRight className="h-4 w-4" />
+          </button>
         </div>
       )}
     </div>

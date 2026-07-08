@@ -37,14 +37,26 @@ Deno.serve(async (req) => {
     });
     if (!uid) return Response.json({ error: "No se pudo autenticar en Odoo" }, { status: 401 });
 
-    const searchRead = async (model, domain, fields, order, lim) => {
+    const searchRead = async (model, domain, fields, order, lim, offset) => {
       const kwargs = { fields, limit: lim || limit };
       if (order) kwargs.order = order;
+      if (offset) kwargs.offset = offset;
       return rpc("/jsonrpc", {
         service: "object",
         method: "execute_kw",
         args: [ODOO_DB, uid, ODOO_KEY, model, "search_read", [domain], kwargs],
       });
+    };
+    const searchReadAll = async (model, domain, fields, order, batch = 200, max = 3000) => {
+      const out = [];
+      let off = 0;
+      while (off < max) {
+        const r = await searchRead(model, domain, fields, order, batch, off);
+        out.push(...r);
+        if (r.length < batch) break;
+        off += batch;
+      }
+      return out;
     };
 
     const m2o = (v) => (Array.isArray(v) ? v[1] : v || "");
@@ -643,12 +655,11 @@ Deno.serve(async (req) => {
       });
       extra.odoo_url = ODOO_URL;
     } else if (resource === "inventario") {
-      const tmpls = await searchRead(
+      const tmpls = await searchReadAll(
         "product.template",
         [["active", "=", true], ["type", "in", ["product", "consu"]]],
         ["id", "name", "default_code", "list_price", "is_published", "type", "categ_id", "image_128"],
-        "name",
-        200
+        "name"
       );
       const tmplIds = tmpls.map((t) => t.id);
       let variants = [];
@@ -656,22 +667,20 @@ Deno.serve(async (req) => {
       const pavMap = {};
       const attrMap = {};
       if (tmplIds.length) {
-        variants = await searchRead(
+        variants = await searchReadAll(
           "product.product",
           [["product_tmpl_id", "in", tmplIds], ["active", "=", true]],
           ["id", "name", "default_code", "barcode", "lst_price", "qty_available", "product_tmpl_id", "product_template_attribute_value_ids"],
-          "name",
-          200
+          "name"
         );
         const ptavIds = [];
         variants.forEach((v) => (v.product_template_attribute_value_ids || []).forEach((id) => ptavIds.push(id)));
         if (ptavIds.length) {
-          const ptavs = await searchRead(
+          const ptavs = await searchReadAll(
             "product.template.attribute.value",
             [["id", "in", ptavIds]],
             ["id", "product_attribute_value_id", "price_extra"],
-            null,
-            200
+            null
           );
           const pavIds = [];
           ptavs.forEach((p) => {
@@ -680,12 +689,11 @@ Deno.serve(async (req) => {
             if (pavId) pavIds.push(pavId);
           });
           if (pavIds.length) {
-            const pavs = await searchRead(
+            const pavs = await searchReadAll(
               "product.attribute.value",
               [["id", "in", pavIds]],
               ["id", "name", "attribute_id"],
-              null,
-              200
+              null
             );
             const attrIds = [];
             pavs.forEach((p) => {
@@ -694,7 +702,7 @@ Deno.serve(async (req) => {
               if (attrId) attrIds.push(attrId);
             });
             if (attrIds.length) {
-              const attrs = await searchRead("product.attribute", [["id", "in", attrIds]], ["id", "name"], null, 200);
+              const attrs = await searchReadAll("product.attribute", [["id", "in", attrIds]], ["id", "name"], null);
               attrs.forEach((a) => (attrMap[a.id] = a.name || ""));
             }
           }
