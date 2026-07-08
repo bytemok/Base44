@@ -5,6 +5,7 @@ import { MODULES } from "@/components/erp/modules";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import AnalisisLogistico from "@/components/erp/AnalisisLogistico";
 import ResumenReportes from "@/components/erp/ResumenReportes";
+import LazyMount from "@/components/erp/LazyMount";
 
 function AppTile({ module }) {
   const Icon = module.icon;
@@ -45,7 +46,15 @@ export default function Dashboard() {
       )}
 
       <AnalisisLogistico key={refreshKey} />
-      <ResumenReportes key={refreshKey} />
+      <LazyMount
+        fallback={
+          <div className="flex items-center gap-2 py-8 text-sm text-slate-400">
+            <Loader2 className="h-5 w-5 animate-spin" /> Cargando reportes...
+          </div>
+        }
+      >
+        <ResumenReportes key={refreshKey} />
+      </LazyMount>
     </div>
   );
 }
