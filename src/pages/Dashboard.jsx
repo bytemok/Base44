@@ -1,20 +1,17 @@
 import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { MODULES, SECTIONS } from "@/components/erp/modules";
+import { MODULES } from "@/components/erp/modules";
 import AnalisisLogistico from "@/components/erp/AnalisisLogistico";
 import ResumenReportes from "@/components/erp/ResumenReportes";
 
-function ModuleCard({ module }) {
+function AppTile({ module }) {
   const Icon = module.icon;
   return (
-    <Link
-      to={module.path}
-      className="group flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition hover:border-emerald-200 hover:shadow-md"
-    >
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 text-slate-600 transition group-hover:bg-emerald-50 group-hover:text-emerald-600">
-        <Icon className="h-6 w-6" />
+    <Link to={module.path} className="group flex w-24 flex-col items-center gap-2.5">
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-md ring-1 ring-slate-100 transition group-hover:-translate-y-0.5 group-hover:shadow-lg">
+        <Icon className="h-9 w-9 text-brand" />
       </div>
-      <p className="text-sm font-medium text-slate-800">{module.label}</p>
+      <span className="text-center text-xs font-medium leading-tight text-slate-700">{module.label}</span>
     </Link>
   );
 }
@@ -29,26 +26,16 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
+      <div className="rounded-2xl bg-teal-50 px-6 py-8">
         <h1 className="text-2xl font-semibold text-slate-900">{greeting} 👋</h1>
-        <p className="mt-1 text-sm text-slate-500">Elegí un módulo para empezar.</p>
+        <p className="mt-1 text-sm text-slate-500">Elegí una aplicación para empezar.</p>
+        <div className="mt-6 flex flex-wrap gap-6">
+          {MODULES.map((m) => <AppTile key={m.slug} module={m} />)}
+        </div>
       </div>
 
       <AnalisisLogistico />
       <ResumenReportes />
-
-      {SECTIONS.map((section) => (
-        <section key={section}>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            {section}
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {MODULES.filter((m) => m.section === section).map((m) => (
-              <ModuleCard key={m.slug} module={m} />
-            ))}
-          </div>
-        </section>
-      ))}
     </div>
   );
 }
