@@ -59,7 +59,7 @@ export default function PedidosEnviados() {
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Pedidos enviados</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Pedidos entregados</h1>
           <p className="mt-1 text-sm text-slate-500">Transferencias de salida confirmadas · {filtered.length}</p>
         </div>
         <div className="relative sm:w-72">
@@ -82,7 +82,7 @@ export default function PedidosEnviados() {
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-slate-200 py-16 text-slate-400">
           <Send className="h-8 w-8" />
-          <p className="text-sm">No hay pedidos enviados confirmados</p>
+          <p className="text-sm">No hay pedidos entregados confirmados</p>
         </div>
       ) : (
         <div className="space-y-2.5">
