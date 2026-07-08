@@ -178,6 +178,7 @@ Deno.serve(async (req) => {
       );
       const pids = r.map((p) => p.id);
       let moveMap = {};
+      const pickingSaleLines = {};
       if (pids.length) {
         const moves = await searchRead(
           "stock.move",
@@ -203,6 +204,7 @@ Deno.serve(async (req) => {
           if (!pid) return;
           const sl = Array.isArray(m.sale_line_id) ? m.sale_line_id[0] : null;
           const pl = Array.isArray(m.purchase_line_id) ? m.purchase_line_id[0] : null;
+          if (sl) (pickingSaleLines[pid] = pickingSaleLines[pid] || []).push(sl);
           const noVar = (sl && noVarMap["sale:" + sl]) || (pl && noVarMap["purchase:" + pl]) || [];
           (moveMap[pid] = moveMap[pid] || []).push({
             producto: m2o(m.product_id),
@@ -212,6 +214,7 @@ Deno.serve(async (req) => {
           });
         });
       }
+      // Patas que vienen como movimientos propios del picking
       Object.keys(moveMap).forEach((pid) => {
         const items = moveMap[pid];
         const patas = items.filter((m) => /^patas/i.test((m.producto || "").trim()));
@@ -230,6 +233,39 @@ Deno.serve(async (req) => {
         try {
           const pos = await searchRead("purchase.order", [["name", "in", origenes]], ["id", "name"], null, 100);
           pos.forEach((s) => (poByName[s.name] = s.id));
+        } catch (e) {}
+      }
+      // Patas desde la orden de venta origen (la compra nace de un pedido; el patas no viene en esta recepción)
+      const poIds = Array.from(new Set(Object.values(poByName).filter(Boolean)));
+      if (poIds.length) {
+        try {
+          const pols = await searchRead("purchase.order.line", [["order_id", "in", poIds]], ["id", "order_id", "sale_order_id"], null, 300);
+          const poToSale = {};
+          const saleIds = new Set();
+          pols.forEach((l) => {
+            const poid = Array.isArray(l.order_id) ? l.order_id[0] : null;
+            const soid = Array.isArray(l.sale_order_id) ? l.sale_order_id[0] : null;
+            if (poid && soid) { poToSale[poid] = soid; saleIds.add(soid); }
+          });
+          if (saleIds.size) {
+            const sols = await searchRead("sale.order.line", [["order_id", "in", Array.from(saleIds)]], ["id", "order_id", "name", "product_uom_qty"], null, 500);
+            const salePatas = {};
+            sols.forEach((l) => {
+              if (!/^patas/i.test((l.name || "").trim())) return;
+              const soid = Array.isArray(l.order_id) ? l.order_id[0] : null;
+              if (!soid) return;
+              (salePatas[soid] = salePatas[soid] || []).push(`${l.name} x${l.product_uom_qty || 0}`);
+            });
+            r.forEach((p) => {
+              const items = moveMap[p.id] || [];
+              if (!items.length || items.some((m) => /^patas/i.test((m.producto || "").trim()))) return;
+              const soid = poToSale[poByName[p.origin] || 0];
+              const patasArr = salePatas[soid];
+              if (!patasArr || !patasArr.length) return;
+              const obs = patasArr.join(" · ");
+              items.forEach((m) => { if (!/^patas/i.test((m.producto || "").trim())) m.observacion = obs; });
+            });
+          }
         } catch (e) {}
       }
       rows = r.map((p) => ({
