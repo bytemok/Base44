@@ -49,19 +49,30 @@ Deno.serve(async (req) => {
 
     const m2o = (v) => (Array.isArray(v) ? v[1] : v || "");
     const reportUrl = (report, ids) => `${ODOO_URL}/report/pdf/${report}/${ids.join(",")}`;
-    const ZONAS = {
+    const DEFAULT_ZONAS = {
       norte: ["vicente lópez","vicente lopez","san isidro","tigre","san martín","san martin","tres de febrero","3 de febrero","pilar","escobar","malvinas argentinas","josé c. paz","jose c. paz","san miguel","zárate","zarate","campana","maschwitz","nordelta","puerto madryn","benavídez","benavidez","del viso","la lucila","olivos","martínez","martinez","acassuso","beccar","carupá","carupa"],
       sur: ["avellaneda","lanús","lanus","quilmes","berazategui","florencio varela","almirante brown","lomas de zamora","esteban echeverría","ezeiza","presidente perón","presidente peron","la plata","berisso","ensenada","cañuelas","brandsen","gutiérrez","gutierrez","don orazio","city bell","gonnet","tolosa","villa elisa","villa ballester"],
       oeste: ["morón","moron","ituzaingó","ituzaingo","hurlingham","la matanza","merlo","moreno","general las heras","marcos paz","luján","lujan","navarro","rodríguez","rodriguez","haedo","ramos mejía","ramos mejia","san justo","ciudadela","caseros","el palomar","villa luzuriaga","isidro casanova","gregorio de laferrere","rafael castillo","libertad","pasco","tristán suárez","tristan suarez"],
       caba: ["capital federal","caba","c.a.b.a.","c.a.b.a","ciudad autónoma","ciudad autonoma","buenos aires","capital","palermo","belgrano","caballito","flores","devoto","nuñez","nunez","recoleta","almagro","villa crespo","balvanera","boedo","san telmo","la boca","mataderos","liniers","versalles","villa urquiza","villa devoto","monte castro","villa real","agronomía","parque chas","colegiales","núñez"]
     };
+    let zonaConfig = Object.entries(DEFAULT_ZONAS).map(([k, ciudades]) => ({
+      nombre: k === "norte" ? "Zona Norte" : k === "sur" ? "Zona Sur" : k === "oeste" ? "Zona Oeste" : "CABA",
+      ciudades,
+    }));
+    try {
+      const cfg = await base44.asServiceRole.entities.ZonaEntrega.list();
+      if (Array.isArray(cfg) && cfg.length) {
+        zonaConfig = cfg.map((z) => ({
+          nombre: z.nombre,
+          ciudades: (z.ciudades || "").split(/[\n,]/).map((s) => s.trim().toLowerCase()).filter(Boolean),
+        }));
+      }
+    } catch (e) {}
     const zonaPorCiudad = (city) => {
       const c = (city || "").toLowerCase().trim();
       if (!c) return "CABA";
-      for (const [z, cities] of Object.entries(ZONAS)) {
-        if (cities.some((x) => c === x || c.includes(x) || x.includes(c))) {
-          return z === "norte" ? "Zona Norte" : z === "sur" ? "Zona Sur" : z === "oeste" ? "Zona Oeste" : "CABA";
-        }
+      for (const z of zonaConfig) {
+        if (z.ciudades.some((x) => c === x || c.includes(x) || x.includes(c))) return z.nombre;
       }
       return "CABA";
     };
@@ -859,6 +870,27 @@ Deno.serve(async (req) => {
           listo,
         };
       });
+    } else if (resource === "alertas_stock") {
+      const r = await searchRead(
+        "product.product",
+        [["active", "=", true], ["type", "in", ["product", "consu"]]],
+        ["id", "name", "default_code", "barcode", "qty_available", "lst_price", "type"],
+        "name",
+        500
+      );
+      const faltantes = r.filter((p) => (p.qty_available || 0) < 0).sort((a, b) => (a.qty_available - b.qty_available));
+      const attrMap = await loadVariantAttrs(faltantes.map((p) => p.id));
+      rows = faltantes.map((p) => ({
+        product_id: p.id,
+        nombre: p.name || "",
+        codigo: p.default_code || "",
+        barcode: p.barcode || "",
+        faltante: Math.abs(p.qty_available || 0),
+        stock: p.qty_available || 0,
+        precio: p.lst_price || 0,
+        atributos: attrMap[p.id] || [],
+      }));
+      extra.odoo_url = ODOO_URL;
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }

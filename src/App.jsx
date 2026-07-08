@@ -21,6 +21,11 @@ import Variantes from '@/pages/Variantes';
 import ControlStock from '@/pages/ControlStock';
 import PickInPickOut from '@/pages/PickInPickOut';
 import Facturas from '@/pages/Facturas';
+import RegistroLogistico from '@/pages/RegistroLogistico';
+import ReporteSatisfaccion from '@/pages/ReporteSatisfaccion';
+import GestionZonas from '@/pages/GestionZonas';
+import AlertasStock from '@/pages/AlertasStock';
+import Perfil from '@/pages/Perfil';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -67,6 +72,11 @@ const AuthenticatedApp = () => {
           <Route path="/control-stock" element={<ControlStock />} />
           <Route path="/pick" element={<PickInPickOut />} />
           <Route path="/facturas" element={<Facturas />} />
+          <Route path="/registro-logistico" element={<RegistroLogistico />} />
+          <Route path="/reporte-satisfaccion" element={<ReporteSatisfaccion />} />
+          <Route path="/gestion-zonas" element={<GestionZonas />} />
+          <Route path="/alertas-stock" element={<AlertasStock />} />
+          <Route path="/perfil" element={<Perfil />} />
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

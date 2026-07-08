@@ -17,3 +17,10 @@ export const ZONE_BLOCK = {
   "Zona Norte": { accent: "border-l-emerald-400", band: "bg-emerald-50" },
   "Sin zona": { accent: "border-l-slate-300", band: "bg-slate-50" },
 };
+
+export const DEFAULT_ZONA_CIUDADES = {
+  "Zona Norte": "vicente lópez, vicente lopez, san isidro, tigre, san martín, san martin, tres de febrero, 3 de febrero, pilar, escobar, malvinas argentinas, josé c. paz, jose c. paz, san miguel, zárate, zarate, campana, maschwitz, nordelta, benavídez, benavidez, del viso, la lucila, olivos, martínez, martinez, acassuso, beccar, carupá, carupa",
+  "Zona Sur": "avellaneda, lanús, lanus, quilmes, berazategui, florencio varela, almirante brown, lomas de zamora, esteban echeverría, ezeiza, presidente perón, presidente peron, la plata, berisso, ensenada, cañuelas, brandsen, gutiérrez, gutierrez, don orazio, city bell, gonnet, tolosa, villa elisa, villa ballester",
+  "Zona Oeste": "morón, moron, ituzaingó, ituzaingo, hurlingham, la matanza, merlo, moreno, general las heras, marcos paz, luján, lujan, navarro, rodríguez, rodriguez, haedo, ramos mejía, ramos mejia, san justo, ciudadela, caseros, el palomar, villa luzuriaga, isidro casanova, gregorio de laferrere, rafael castillo, libertad, pasco, tristán suárez, tristan suarez",
+  "CABA": "capital federal, caba, ciudad autónoma, ciudad autonoma, buenos aires, capital, palermo, belgrano, caballito, flores, devoto, nuñez, nunez, recoleta, almagro, villa crespo, balvanera, boedo, san telmo, la boca, mataderos, liniers, versalles, villa urquiza, villa devoto, monte castro, villa real, agronomía, parque chas, colegiales",
+};

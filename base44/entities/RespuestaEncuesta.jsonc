@@ -1,0 +1,37 @@
+{
+  "name": "RespuestaEncuesta",
+  "type": "object",
+  "properties": {
+    "order_ref": {
+      "type": "string",
+      "description": "N\u00famero de la orden de venta en Odoo (ej. S07400)"
+    },
+    "cliente": {
+      "type": "string"
+    },
+    "telefono": {
+      "type": "string"
+    },
+    "nivel": {
+      "type": "number",
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "description": "1=Muy satisfecho, 2=Satisfecho, 3=Poco satisfecho, 4=No satisfecho"
+    },
+    "fecha": {
+      "type": "string",
+      "format": "date"
+    },
+    "comentario": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "nivel",
+    "fecha"
+  ]
+}
