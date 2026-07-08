@@ -10,6 +10,14 @@ Deno.serve(async (req) => {
     const resource = body.resource;
     const limit = Math.min(Number(body.limit) || 100, 200);
 
+    const WRITE_RESOURCES = new Set([
+      "guardar_producto", "recibir_pickings", "coordinar_pedido", "control_stock_aplicar",
+      "pickings_crear", "registrar_pago_caja", "generar_orden_compra",
+    ]);
+    if (WRITE_RESOURCES.has(resource) && user.role !== "admin") {
+      return Response.json({ error: "Forbidden: se requiere rol admin" }, { status: 403 });
+    }
+
     const ODOO_URL = (Deno.env.get("ODOO_URL") || "").replace(/\/$/, "");
     const ODOO_DB = Deno.env.get("ODOO_DB");
     const ODOO_USER = Deno.env.get("ODOO_USERNAME");
