@@ -154,9 +154,9 @@ export default function Recepciones() {
                     </a>
                   )}
                 </div>
-                {r.productos?.length > 0 && (
+                {r.productos?.filter((p) => !/^patas/i.test((p.producto || "").trim()))?.length > 0 && (
                   <div className="mt-3 ml-8 divide-y divide-slate-100 rounded-lg border border-slate-100">
-                    {r.productos.map((p, i) => (
+                    {r.productos.filter((p) => !/^patas/i.test((p.producto || "").trim())).map((p, i) => (
                       <div key={i} className="px-3 py-1.5">
                         <div className="flex items-center justify-between">
                           <span className="truncate text-sm text-slate-700">{p.producto}</span>

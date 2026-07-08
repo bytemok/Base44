@@ -138,7 +138,7 @@ export default function DetallePedido({ orderId, onClose }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {d.lines.map((l, i) => (
+                    {d.lines.filter((l) => !/^patas/i.test((l.producto || l.descripcion || "").trim())).map((l, i) => (
                       <tr key={i}>
                         <td className="px-3 py-2">
                           <p className="font-medium text-slate-800">{l.producto || "—"}</p>
