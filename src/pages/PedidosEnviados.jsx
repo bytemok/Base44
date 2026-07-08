@@ -82,6 +82,14 @@ export default function PedidosEnviados() {
                   </div>
                   <p className="mt-1.5 font-semibold text-slate-900">{r.cliente || "—"}</p>
                   <p className="text-xs text-slate-400">{r.fecha}{r.destino ? ` · ${r.destino}` : ""}</p>
+                  {r.contacto && (r.contacto.telefono || r.contacto.email || r.contacto.calle || r.contacto.ciudad) && (
+                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-500">
+                      {r.contacto.telefono && <span>📞 {r.contacto.telefono}</span>}
+                      {r.contacto.email && <span>✉️ {r.contacto.email}</span>}
+                      {r.contacto.calle && <span>📍 {r.contacto.calle}{r.contacto.ciudad ? `, ${r.contacto.ciudad}` : ""}</span>}
+                      {r.contacto.cuit && <span>CUIT: {r.contacto.cuit}</span>}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {printOrden(r) && (

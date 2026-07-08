@@ -376,19 +376,32 @@ Deno.serve(async (req) => {
       const partnerPhone = {};
       if (partnerIds.length) {
         try {
-          const partners = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "phone", "mobile"], null, 200);
-          partners.forEach((p) => { partnerPhone[p.id] = p.phone || p.mobile || ""; });
+          const partners = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "name", "phone", "email", "street", "street2", "city", "state_id", "country_id", "vat", "zip"], null, 200);
+          partners.forEach((p) => { partnerPhone[p.id] = {
+            nombre: p.name || "",
+            telefono: p.phone || "",
+            email: p.email || "",
+            calle: p.street || "",
+            calle2: p.street2 || "",
+            ciudad: p.city || "",
+            provincia: m2o(p.state_id),
+            pais: m2o(p.country_id),
+            cuit: p.vat || "",
+            cp: p.zip || "",
+          }; });
         } catch (e) {}
       }
       rows = r.map((p) => {
         const pid = Array.isArray(p.partner_id) ? p.partner_id[0] : null;
+        const contacto = partnerPhone[pid] || {};
         return {
           picking_id: p.id,
           referencia: p.name || "",
           origen: p.origin || "",
           order_id: orderByName[p.origin] || null,
           cliente: m2o(p.partner_id),
-          telefono: partnerPhone[pid] || "",
+          telefono: contacto.telefono || contacto.movil || "",
+          contacto,
           fecha: p.scheduled_date ? p.scheduled_date.slice(0, 16).replace("T", " ") : "",
           estado: p.state || "",
           destino: m2o(p.location_dest_id),
