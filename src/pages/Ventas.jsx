@@ -5,6 +5,19 @@ const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS",
 const columns = [
   { key: "id", label: "Pedido" },
   { key: "cliente", label: "Cliente" },
+  {
+    key: "productos",
+    label: "Productos",
+    render: (r) => (
+      <div className="flex flex-col gap-0.5">
+        {(r.productos || []).map((p, i) => (
+          <span key={i} className={p.entregado ? "font-medium text-emerald-600" : "text-slate-900"}>
+            {p.nombre}
+          </span>
+        ))}
+      </div>
+    ),
+  },
   { key: "fecha", label: "Fecha" },
   { key: "total", label: "Total", className: "text-right", render: (r) => fmt.format(r.total) },
   { key: "transferencias", label: "Transferencias", className: "text-center" },

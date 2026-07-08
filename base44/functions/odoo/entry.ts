@@ -489,6 +489,7 @@ Deno.serve(async (req) => {
         "date_order desc",
         200
       );
+      const orderIds = orders.map((o) => o.id);
       const allPickingIds = [];
       const partnerIds = [];
       orders.forEach((o) => {
@@ -496,16 +497,29 @@ Deno.serve(async (req) => {
         const pid = Array.isArray(o.partner_id) ? o.partner_id[0] : null;
         if (pid) partnerIds.push(pid);
       });
+      // picks / partners / lines son independientes entre sí -> paralelo para no sumar latencia
+      const [picks, partners, lines] = await Promise.all([
+        allPickingIds.length ? searchRead("stock.picking", [["id", "in", allPickingIds]], ["id", "state"], null, 200) : Promise.resolve([]),
+        partnerIds.length ? searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city"], null, 300) : Promise.resolve([]),
+        orderIds.length ? searchRead("sale.order.line", [["order_id", "in", orderIds]], ["id", "order_id", "name", "product_id", "product_uom_qty", "qty_delivered"], "sequence", 500) : Promise.resolve([]),
+      ]);
       const pickingState = {};
-      if (allPickingIds.length) {
-        const picks = await searchRead("stock.picking", [["id", "in", allPickingIds]], ["id", "state"], null, 200);
-        picks.forEach((p) => (pickingState[p.id] = p.state));
-      }
+      picks.forEach((p) => (pickingState[p.id] = p.state));
       const partnerCity = {};
-      if (partnerIds.length) {
-        const partners = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city"], null, 300);
-        partners.forEach((p) => { partnerCity[p.id] = p.city || ""; });
-      }
+      partners.forEach((p) => { partnerCity[p.id] = p.city || ""; });
+      const linesByOrder = {};
+      lines.forEach((l) => {
+        const oid = Array.isArray(l.order_id) ? l.order_id[0] : null;
+        if (!oid) return;
+        const nombre = (l.name || m2o(l.product_id) || "").trim();
+        if (/^patas/i.test(nombre)) return; // accesorios no relevantes para el detalle
+        const demand = l.product_uom_qty || 0;
+        const entregado = l.qty_delivered || 0;
+        (linesByOrder[oid] = linesByOrder[oid] || []).push({
+          nombre,
+          entregado: demand > 0 && entregado >= demand,
+        });
+      });
       rows = orders
         .map((o) => {
           const pids = o.picking_ids || [];
@@ -528,6 +542,7 @@ Deno.serve(async (req) => {
             ciudad: partnerCity[pid] || "",
             transporte: carrier,
             zona: zonaDe(partnerCity[pid] || "", carrier),
+            productos: linesByOrder[o.id] || [],
           };
         })
         .filter((r) => r.sin_entregar);
