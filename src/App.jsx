@@ -23,6 +23,7 @@ import ControlStock from '@/pages/ControlStock';
 import PickInPickOut from '@/pages/PickInPickOut';
 import Facturas from '@/pages/Facturas';
 import RegistroLogistico from '@/pages/RegistroLogistico';
+import Compras from '@/pages/Compras';
 import ReporteSatisfaccion from '@/pages/ReporteSatisfaccion';
 import GestionZonas from '@/pages/GestionZonas';
 import AlertasStock from '@/pages/AlertasStock';
@@ -82,6 +83,7 @@ const AuthenticatedApp = () => {
           <Route path="/gestion-zonas" element={<GestionZonas />} />
           <Route path="/alertas-stock" element={<AlertasStock />} />
           <Route path="/reportes" element={<Reportes />} />
+          <Route path="/compras" element={<Compras />} />
           <Route path="/perfil" element={<Perfil />} />
         </Route>
       </Route>

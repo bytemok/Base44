@@ -926,6 +926,86 @@ Deno.serve(async (req) => {
         atributos: attrMap[p.id] || [],
       }));
       extra.odoo_url = ODOO_URL;
+    } else if (resource === "proveedores") {
+      const r = await searchRead("res.partner", [["supplier_rank", ">", 0], ["active", "=", true]], ["id", "name", "email", "phone", "vat", "city"], "name", 300);
+      rows = r.map((p) => ({ id: p.id, nombre: p.name || "", email: p.email || "", telefono: p.phone || "", cuit: p.vat || "", ciudad: p.city || "" }));
+    } else if (resource === "sugerencias_compra") {
+      const productos = await searchRead("product.product", [["active", "=", true], ["type", "in", ["product", "consu"]]], ["id", "name", "default_code", "barcode", "qty_available", "standard_price", "seller_ids"], "name", 500);
+      const prodIds = productos.map((p) => p.id);
+      const opMap = {};
+      if (prodIds.length) {
+        const ops = await searchRead("stock.warehouse.orderpoint", [["product_id", "in", prodIds]], ["id", "product_id", "product_min_qty", "product_max_qty"], null, 500);
+        ops.forEach((o) => {
+          const pid = Array.isArray(o.product_id) ? o.product_id[0] : null;
+          if (pid) opMap[pid] = { min: o.product_min_qty || 0, max: o.product_max_qty || 0 };
+        });
+      }
+      const allSellerIds = [];
+      productos.forEach((p) => (p.seller_ids || []).forEach((id) => allSellerIds.push(id)));
+      const sellerMap = {};
+      const partnerIds = [];
+      if (allSellerIds.length) {
+        const sinfo = await searchRead("product.supplierinfo", [["id", "in", allSellerIds]], ["id", "partner_id", "price", "sequence"], "sequence", 500);
+        sinfo.forEach((s) => {
+          const pid = Array.isArray(s.partner_id) ? s.partner_id[0] : null;
+          sellerMap[s.id] = { partner_id: pid, partner_name: m2o(s.partner_id), price: s.price || 0 };
+          if (pid) partnerIds.push(pid);
+        });
+      }
+      const partnerName = {};
+      if (partnerIds.length) {
+        const ps = await searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "name"], null, 300);
+        ps.forEach((p) => (partnerName[p.id] = p.name || ""));
+      }
+      const prodSupplier = {};
+      productos.forEach((p) => {
+        const sids = p.seller_ids || [];
+        if (sids.length) {
+          const s = sellerMap[sids[0]];
+          if (s) prodSupplier[p.id] = { id: s.partner_id, nombre: partnerName[s.partner_id] || s.partner_name || "", price: s.price || 0 };
+        }
+      });
+      rows = productos.map((p) => {
+        const op = opMap[p.id];
+        const stock = p.qty_available || 0;
+        let sugerido = 0;
+        let motivo = "";
+        if (op) {
+          if (stock <= op.min) { sugerido = Math.max(1, Math.ceil(op.max - stock)); motivo = `Regla: min ${op.min} / max ${op.max}`; }
+          else motivo = `Regla OK (min ${op.min})`;
+        } else if (stock <= 0) { sugerido = 1; motivo = "Stock agotado"; }
+        const sup = prodSupplier[p.id] || {};
+        return {
+          product_id: p.id,
+          nombre: p.name || "",
+          codigo: p.default_code || "",
+          barcode: p.barcode || "",
+          stock,
+          stock_min: op ? op.min : null,
+          stock_max: op ? op.max : null,
+          sugerido,
+          motivo,
+          proveedor_id: sup.id || null,
+          proveedor: sup.nombre || "",
+          costo: sup.price || p.standard_price || 0,
+        };
+      }).filter((r) => r.sugerido > 0);
+    } else if (resource === "generar_orden_compra") {
+      const partnerId = Number(body.partner_id);
+      const lineas = Array.isArray(body.lineas) ? body.lineas : [];
+      if (!partnerId || !lineas.length) return Response.json({ error: "Faltan datos" }, { status: 400 });
+      const poId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "purchase.order", "create", [{ partner_id: partnerId, date_order: new Date().toISOString().slice(0, 10) + " 00:00:00" }]] });
+      for (const ln of lineas) {
+        const prodId = Number(ln.product_id);
+        const qty = Number(ln.qty);
+        const price = Number(ln.price);
+        if (!prodId || !qty) continue;
+        const [prod] = await searchRead("product.product", [["id", "=", prodId]], ["name", "uom_id"], null, 1);
+        const uomId = Array.isArray(prod?.uom_id) ? prod.uom_id[0] : null;
+        await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "purchase.order.line", "create", [{ order_id: poId, product_id: prodId, name: prod?.name || "", product_qty: qty, product_uom: uomId, price_unit: price || 0 }]] });
+      }
+      const [po] = await searchRead("purchase.order", [["id", "=", poId]], ["name", "amount_total"], null, 1);
+      return Response.json({ resource: "generar_orden_compra", order_id: poId, name: po?.name || "", total: po?.amount_total || 0, odoo_url: ODOO_URL });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }
