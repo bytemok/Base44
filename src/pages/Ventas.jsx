@@ -27,6 +27,7 @@ export default function Ventas() {
       subtitle="Órdenes confirmadas pendientes de entrega · Odoo"
       columns={columns}
       searchKeys={["id", "cliente"]}
+      detailIdKey="db_id"
     />
   );
 }

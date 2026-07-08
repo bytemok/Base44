@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { Plus, Pencil, Trash2, Package, Search, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, Search, ChevronDown, Eye } from "lucide-react";
 import StatusBadge, { STATUS_ORDER } from "@/components/pedidos/StatusBadge";
 import StatusSelect from "@/components/pedidos/StatusSelect";
 import PedidoForm from "@/components/pedidos/PedidoForm";
+import DetallePedidoLocal from "@/components/pedidos/DetallePedidoLocal";
 
 export default function Pedidos() {
   const [pedidos, setPedidos] = useState([]);
@@ -15,6 +16,7 @@ export default function Pedidos() {
   const [search, setSearch] = useState("");
   const [sortDir, setSortDir] = useState("desc");
   const [updatingId, setUpdatingId] = useState(null);
+  const [detalle, setDetalle] = useState(null);
 
   const loadPedidos = async () => {
     setLoading(true);
@@ -274,6 +276,13 @@ export default function Pedidos() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-1">
                         <button
+                          onClick={() => setDetalle(p)}
+                          className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                          title="Ver detalle"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => openEdit(p)}
                           className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                           title="Editar"
@@ -350,6 +359,13 @@ export default function Pedidos() {
                   />
                   <div className="flex gap-1">
                     <button
+                      onClick={() => setDetalle(p)}
+                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      title="Ver detalle"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => openEdit(p)}
                       className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                     >
@@ -378,6 +394,8 @@ export default function Pedidos() {
         onSave={handleSave}
         pedido={editing}
       />
+
+      <DetallePedidoLocal pedido={detalle} onClose={() => setDetalle(null)} />
     </div>
   );
 }

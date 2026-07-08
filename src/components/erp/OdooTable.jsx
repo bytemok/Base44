@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from "react";
-import { Search, RefreshCw, Inbox } from "lucide-react";
+import { Search, RefreshCw, Inbox, Eye } from "lucide-react";
 import { useOdoo } from "@/hooks/useOdoo";
+import DetallePedido from "@/components/erp/DetallePedido";
 
-export default function OdooTable({ resource, title, subtitle, columns, searchKeys = [], limit }) {
+export default function OdooTable({ resource, title, subtitle, columns, searchKeys = [], limit, detailIdKey }) {
   const { data, loading, error, reload } = useOdoo(resource, limit);
   const [q, setQ] = useState("");
+  const [detalleId, setDetalleId] = useState(null);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return data;
@@ -62,6 +64,7 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
                   {columns.map((c) => (
                     <th key={c.key} className="px-4 py-3 font-medium">{c.label}</th>
                   ))}
+                  {detailIdKey && <th className="px-4 py-3 text-right font-medium">Detalle</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -72,6 +75,16 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
                         {c.render ? c.render(row) : row[c.key]}
                       </td>
                     ))}
+                    {detailIdKey && (
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => setDetalleId(row[detailIdKey])}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> Ver
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -89,6 +102,14 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
                     </span>
                   </div>
                 ))}
+                {detailIdKey && (
+                  <button
+                    onClick={() => setDetalleId(row[detailIdKey])}
+                    className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    <Eye className="h-3.5 w-3.5" /> Ver detalle
+                  </button>
+                )}
               </div>
             ))}
           </div>
@@ -98,6 +119,8 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
           </p>
         </>
       )}
+
+      {detalleId && <DetallePedido orderId={detalleId} onClose={() => setDetalleId(null)} />}
     </div>
   );
 }

@@ -2,9 +2,10 @@ import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
 import { base44 } from "@/api/base44Client";
 import {
-  Search, Inbox, FileText, Tags, Printer,
+  Search, Inbox, FileText, Tags, Printer, Eye,
   CheckSquare, Square, Loader2,
 } from "lucide-react";
+import DetallePedido from "@/components/erp/DetallePedido";
 
 const ESTADOS = {
   assigned: { label: "Listo", cls: "bg-amber-50 text-amber-700 ring-amber-200" },
@@ -19,6 +20,7 @@ export default function Recepciones() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(new Set());
   const [recibiendo, setRecibiendo] = useState(false);
+  const [detalleId, setDetalleId] = useState(null);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return data;
@@ -147,12 +149,20 @@ export default function Recepciones() {
                     <p className="mt-1.5 font-semibold text-slate-900">{r.proveedor || "—"}</p>
                     <p className="text-xs text-slate-400">{r.fecha}{r.ubicacion ? ` · ${r.ubicacion}` : ""}</p>
                   </div>
-                  {odooUrl && ordenUrl && (
-                    <a href={ordenUrl} target="_blank" rel="noreferrer" title="Imprimir orden"
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">
-                      <Printer className="h-3.5 w-3.5" /> Orden
-                    </a>
-                  )}
+                  <div className="flex flex-wrap gap-2">
+                    {r.order_id && (
+                      <button onClick={() => setDetalleId(r.order_id)} title="Ver detalle del pedido"
+                        className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-800">
+                        <Eye className="h-3.5 w-3.5" /> Detalle
+                      </button>
+                    )}
+                    {odooUrl && ordenUrl && (
+                      <a href={ordenUrl} target="_blank" rel="noreferrer" title="Imprimir orden"
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">
+                        <Printer className="h-3.5 w-3.5" /> Orden
+                      </a>
+                    )}
+                  </div>
                 </div>
                 {r.productos?.filter((p) => !/^patas/i.test((p.producto || "").trim()))?.length > 0 && (
                   <div className="mt-3 ml-8 divide-y divide-slate-100 rounded-lg border border-slate-100">
@@ -185,6 +195,8 @@ export default function Recepciones() {
           })}
         </div>
       )}
+
+      {detalleId && <DetallePedido orderId={detalleId} onClose={() => setDetalleId(null)} />}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Calendar, Check, Loader2, ClipboardList, MapPin } from "lucide-react";
+import { Calendar, Check, Loader2, ClipboardList, MapPin, Eye } from "lucide-react";
 import { ZONE_ORDER, ZONE_STYLE, ZONE_BLOCK } from "@/lib/zonas";
+import DetallePedido from "@/components/erp/DetallePedido";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -17,6 +18,7 @@ export default function PedidosCoordinar() {
   const [coordinadas, setCoordinadas] = useState([]);
   const [fechas, setFechas] = useState({});
   const [saving, setSaving] = useState(null);
+  const [detalleId, setDetalleId] = useState(null);
 
   const loadCoord = useCallback(async () => {
     try {
@@ -128,6 +130,12 @@ export default function PedidosCoordinar() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setDetalleId(r.db_id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                        >
+                          <Eye className="h-4 w-4" /> Detalle
+                        </button>
                         <Calendar className="h-4 w-4 text-slate-400" />
                         <input
                           type="date"
@@ -156,6 +164,8 @@ export default function PedidosCoordinar() {
           })}
         </div>
       )}
+
+      {detalleId && <DetallePedido orderId={detalleId} onClose={() => setDetalleId(null)} />}
     </div>
   );
 }

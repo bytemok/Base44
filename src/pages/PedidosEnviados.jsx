@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Search, Send, FileText, Tags, Printer, Inbox, MessageCircle } from "lucide-react";
+import { Search, Send, FileText, Tags, Printer, Inbox, MessageCircle, Eye } from "lucide-react";
+import DetallePedido from "@/components/erp/DetallePedido";
 
 const RESENA = `Hola, ¿cómo estás? Te escribimos de Todo en Muebles. Queríamos saber si quedaste conforme con el producto recibido. Respondé con una opción:
 1. Muy satisfecho
@@ -24,6 +25,7 @@ export default function PedidosEnviados() {
   const { data, meta, loading, error } = useOdoo("enviados");
   const odooUrl = meta?.odoo_url || "";
   const [q, setQ] = useState("");
+  const [detalleId, setDetalleId] = useState(null);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return data;
@@ -92,6 +94,12 @@ export default function PedidosEnviados() {
                   )}
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  {r.order_id && (
+                    <button onClick={() => setDetalleId(r.order_id)} title="Ver detalle del pedido"
+                      className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-800">
+                      <Eye className="h-3.5 w-3.5" /> Detalle
+                    </button>
+                  )}
                   {printOrden(r) && (
                     <a href={printOrden(r)} target="_blank" rel="noreferrer" title="Imprimir orden"
                       className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">
@@ -152,6 +160,8 @@ export default function PedidosEnviados() {
           ))}
         </div>
       )}
+
+      {detalleId && <DetallePedido orderId={detalleId} onClose={() => setDetalleId(null)} />}
     </div>
   );
 }
