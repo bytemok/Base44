@@ -14,7 +14,10 @@ Deno.serve(async (req) => {
       "guardar_producto", "recibir_pickings", "coordinar_pedido", "control_stock_aplicar",
       "pickings_crear", "registrar_pago_caja", "generar_orden_compra",
     ]);
-    if (WRITE_RESOURCES.has(resource) && user.role !== "admin") {
+    const ADMIN_ONLY_RESOURCES = new Set([
+      "entregas_calendario",
+    ]);
+    if ((WRITE_RESOURCES.has(resource) || ADMIN_ONLY_RESOURCES.has(resource)) && user.role !== "admin") {
       return Response.json({ error: "Forbidden: se requiere rol admin" }, { status: 403 });
     }
 
