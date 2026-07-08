@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useOdoo } from "@/hooks/useOdoo";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Printer, FileText, Package, Eye, Tags, CalendarDays, MessageCircle, CheckCircle2, MapPin, ChevronDown, ChevronRight, Navigation, Route } from "lucide-react";
 import DetallePedido from "@/components/erp/DetallePedido";
 import RutaEntregas from "@/components/erp/RutaEntregas";
 import CrearHojaRuta from "@/components/erp/CrearHojaRuta";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ZONE_ORDER, ZONE_STYLE, ZONE_BLOCK } from "@/lib/zonas";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -38,10 +39,22 @@ const fmtFecha = (s) => {
 };
 
 export default function CalendarioEntregas() {
-  const { data, meta, loading, error } = useOdoo("entregas_calendario");
+  const { data, meta, loading, error, reload } = useOdoo("entregas_calendario");
   const odooUrl = meta?.odoo_url || "";
   const [selected, setSelected] = useState(new Set());
-  const [detalleOrderId, setDetalleOrderId] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const detalleOrderId = searchParams.get("detail");
+  const openDetalle = (id) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("detail", id);
+    setSearchParams(next);
+  };
+  const closeDetalle = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("detail");
+    setSearchParams(next, { replace: true });
+  };
+  usePullToRefresh(reload);
   const [zonaFiltro, setZonaFiltro] = useState("Todas");
   const [estadoFiltro, setEstadoFiltro] = useState("Todas");
   const [collapsed, setCollapsed] = useState(new Set());
@@ -264,7 +277,7 @@ export default function CalendarioEntregas() {
                         return (
                           <div
                             key={r.id}
-                            onClick={() => setDetalleOrderId(r.odoo_order_id)}
+                            onClick={() => openDetalle(r.odoo_order_id)}
                             className="flex cursor-pointer flex-col gap-3 p-4 lg:flex-row lg:items-center lg:justify-between hover:bg-slate-50"
                           >
                             <div className="flex items-start gap-3" onClick={(e) => e.stopPropagation()}>
@@ -296,7 +309,7 @@ export default function CalendarioEntregas() {
                             </div>
                             <div className="flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
                               <button
-                                onClick={() => setDetalleOrderId(r.odoo_order_id)}
+                                onClick={() => openDetalle(r.odoo_order_id)}
                                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                               >
                                 <Eye className="h-3.5 w-3.5" /> Detalle
@@ -376,7 +389,7 @@ export default function CalendarioEntregas() {
       )}
 
       {detalleOrderId && (
-        <DetallePedido orderId={detalleOrderId} onClose={() => setDetalleOrderId(null)} />
+        <DetallePedido orderId={detalleOrderId} onClose={closeDetalle} />
       )}
 
       {rutaOpen && (

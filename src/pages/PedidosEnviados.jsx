@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Search, Send, FileText, Tags, Printer, Inbox, MessageCircle, Eye } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import DetallePedido from "@/components/erp/DetallePedido";
 
 const RESENA = `Hola, ¿cómo estás? Te escribimos de Todo en Muebles. Queríamos saber si quedaste conforme con el producto recibido. Respondé con una opción:
@@ -23,10 +24,22 @@ const waNumber = (tel) => {
 const waLink = (num, text) => (num ? `https://wa.me/${num}?text=${encodeURIComponent(text)}` : "");
 
 export default function PedidosEnviados() {
-  const { data, meta, loading, error } = useOdoo("enviados");
+  const { data, meta, loading, error, reload } = useOdoo("enviados");
   const odooUrl = meta?.odoo_url || "";
   const [q, setQ] = useState("");
-  const [detalleId, setDetalleId] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const detalleId = searchParams.get("detail");
+  const openDetalle = (id) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("detail", id);
+    setSearchParams(next);
+  };
+  const closeDetalle = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("detail");
+    setSearchParams(next, { replace: true });
+  };
+  usePullToRefresh(reload);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return data;
@@ -76,7 +89,7 @@ export default function PedidosEnviados() {
           {filtered.map((r) => (
             <div
               key={r.picking_id}
-              onClick={r.order_id ? () => setDetalleId(r.order_id) : undefined}
+              onClick={r.order_id ? () => openDetalle(r.order_id) : undefined}
               className={`rounded-xl border border-slate-200 bg-white p-4 ${r.order_id ? "cursor-pointer hover:border-slate-300" : ""}`}
             >
               <div className="flex items-start gap-3" onClick={(e) => e.stopPropagation()}>
@@ -101,7 +114,7 @@ export default function PedidosEnviados() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {r.order_id && (
-                    <button onClick={() => setDetalleId(r.order_id)} title="Ver detalle del pedido"
+                    <button onClick={() => openDetalle(r.order_id)} title="Ver detalle del pedido"
                       className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-800">
                       <Eye className="h-3.5 w-3.5" /> Detalle
                     </button>
@@ -167,7 +180,7 @@ export default function PedidosEnviados() {
         </div>
       )}
 
-      {detalleId && <DetallePedido orderId={detalleId} onClose={() => setDetalleId(null)} />}
+      {detalleId && <DetallePedido orderId={detalleId} onClose={closeDetalle} />}
     </div>
   );
 }

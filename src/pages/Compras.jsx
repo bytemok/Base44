@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
 import { base44 } from "@/api/base44Client";
-import { Search, Loader2, PackagePlus, Truck, CheckCircle2, XCircle, ShoppingCart, ExternalLink, Layers } from "lucide-react";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { Search, Loader2, PackagePlus, Truck, CheckCircle2, XCircle, ShoppingCart, ExternalLink, Layers, ChevronDown, X } from "lucide-react";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 });
 
@@ -15,6 +16,8 @@ export default function Compras() {
   const [supSel, setSupSel] = useState({});
   const [generating, setGenerating] = useState(false);
   const [resultados, setResultados] = useState(null);
+  const [supPicker, setSupPicker] = useState(null);
+  usePullToRefresh(reload);
 
   const proveedorNombre = (id) => (proveedores || []).find((p) => p.id === id)?.nombre || "";
 
@@ -170,13 +173,21 @@ export default function Compras() {
                       <select
                         value={supSel[r.product_id] ?? r.proveedor_id ?? ""}
                         onChange={(e) => setSupSel((m) => ({ ...m, [r.product_id]: Number(e.target.value) || null }))}
-                        className="w-40 rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-slate-400"
+                        className="hidden w-40 rounded-lg border border-slate-200 px-2 py-1 text-xs outline-none focus:border-slate-400 md:block"
                       >
                         <option value="">{r.proveedor || "Sin proveedor"}</option>
                         {(proveedores || []).map((p) => (
                           <option key={p.id} value={p.id}>{p.nombre}</option>
                         ))}
                       </select>
+                      <button
+                        type="button"
+                        onClick={() => setSupPicker(r.product_id)}
+                        className="flex w-full items-center justify-between gap-1 rounded-lg border border-slate-200 px-2 py-1.5 text-left text-xs text-slate-700 md:hidden"
+                      >
+                        <span className="truncate">{proveedorNombre(supSel[r.product_id] ?? r.proveedor_id) || r.proveedor || "Sin proveedor"}</span>
+                        <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      </button>
                     </td>
                     <td className="px-3 py-2.5 text-xs text-slate-500">{r.motivo}</td>
                   </tr>
@@ -223,6 +234,33 @@ export default function Compras() {
           </div>
         </div>
       )}
+
+      {supPicker != null && (() => {
+        const row = (data || []).find((r) => r.product_id === supPicker);
+        const cur = supSel[supPicker] ?? row?.proveedor_id;
+        return (
+          <div className="fixed inset-0 z-50 flex items-end bg-black/40 sm:items-center sm:justify-center sm:p-4" onClick={() => setSupPicker(null)}>
+            <div className="max-h-[70vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 shadow-xl animate-in slide-in-from-bottom duration-200 sm:max-w-sm sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-slate-900">Proveedor</h3>
+                <button onClick={() => setSupPicker(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+              </div>
+              <div className="divide-y divide-slate-100">
+                <button onClick={() => { setSupSel((m) => ({ ...m, [supPicker]: null })); setSupPicker(null); }} className="flex w-full items-center justify-between px-2 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
+                  <span>{row?.proveedor || "Sin proveedor"}</span>
+                  {!cur && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                </button>
+                {(proveedores || []).map((p) => (
+                  <button key={p.id} onClick={() => { setSupSel((m) => ({ ...m, [supPicker]: p.id })); setSupPicker(null); }} className="flex w-full items-center justify-between px-2 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
+                    <span>{p.nombre}</span>
+                    {cur === p.id && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

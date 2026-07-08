@@ -1,12 +1,26 @@
 import React, { useState, useMemo } from "react";
 import { Search, RefreshCw, Inbox, Eye } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useOdoo } from "@/hooks/useOdoo";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import DetallePedido from "@/components/erp/DetallePedido";
 
 export default function OdooTable({ resource, title, subtitle, columns, searchKeys = [], limit, detailIdKey }) {
   const { data, loading, error, reload } = useOdoo(resource, limit);
   const [q, setQ] = useState("");
-  const [detalleId, setDetalleId] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const detalleId = searchParams.get("detail");
+  const openDetalle = (id) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("detail", id);
+    setSearchParams(next);
+  };
+  const closeDetalle = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("detail");
+    setSearchParams(next, { replace: true });
+  };
+  usePullToRefresh(reload);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return data;
@@ -71,7 +85,7 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
                 {filtered.map((row, i) => (
                   <tr
                     key={i}
-                    onClick={detailIdKey ? () => setDetalleId(row[detailIdKey]) : undefined}
+                    onClick={detailIdKey ? () => openDetalle(row[detailIdKey]) : undefined}
                     className={`hover:bg-slate-50 ${detailIdKey ? "cursor-pointer" : ""}`}
                   >
                     {columns.map((c) => (
@@ -82,7 +96,7 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
                     {detailIdKey && (
                       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <button
-                          onClick={() => setDetalleId(row[detailIdKey])}
+                          onClick={() => openDetalle(row[detailIdKey])}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                         >
                           <Eye className="h-3.5 w-3.5" /> Ver
@@ -99,7 +113,7 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
             {filtered.map((row, i) => (
               <div
                 key={i}
-                onClick={detailIdKey ? () => setDetalleId(row[detailIdKey]) : undefined}
+                onClick={detailIdKey ? () => openDetalle(row[detailIdKey]) : undefined}
                 className={`rounded-xl border border-slate-200 bg-white p-3 ${detailIdKey ? "cursor-pointer hover:border-slate-300 active:bg-slate-50" : ""}`}
               >
                 {columns.map((c) => (
@@ -112,7 +126,7 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
                 ))}
                 {detailIdKey && (
                   <button
-                    onClick={(e) => { e.stopPropagation(); setDetalleId(row[detailIdKey]); }}
+                    onClick={(e) => { e.stopPropagation(); openDetalle(row[detailIdKey]); }}
                     className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
                   >
                     <Eye className="h-3.5 w-3.5" /> Ver detalle
@@ -128,7 +142,7 @@ export default function OdooTable({ resource, title, subtitle, columns, searchKe
         </>
       )}
 
-      {detalleId && <DetallePedido orderId={detalleId} onClose={() => setDetalleId(null)} />}
+      {detalleId && <DetallePedido orderId={detalleId} onClose={closeDetalle} />}
     </div>
   );
 }

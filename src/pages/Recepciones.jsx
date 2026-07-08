@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
   Search, Inbox, FileText, Tags, Printer, Eye,
@@ -20,7 +22,19 @@ export default function Recepciones() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState(new Set());
   const [recibiendo, setRecibiendo] = useState(false);
-  const [detalleId, setDetalleId] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const detalleId = searchParams.get("detail");
+  const openDetalle = (id) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("detail", id);
+    setSearchParams(next);
+  };
+  const closeDetalle = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("detail");
+    setSearchParams(next, { replace: true });
+  };
+  usePullToRefresh(reload);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return data;
@@ -135,7 +149,7 @@ export default function Recepciones() {
             return (
               <div
                 key={r.picking_id}
-                onClick={r.order_id ? () => setDetalleId(r.order_id) : undefined}
+                onClick={r.order_id ? () => openDetalle(r.order_id) : undefined}
                 className={`rounded-xl border bg-white p-4 transition ${sel ? "border-emerald-300 bg-emerald-50/30" : "border-slate-200"} ${r.order_id ? "cursor-pointer hover:border-slate-300" : ""}`}
               >
                 <div className="flex items-start gap-3" onClick={(e) => e.stopPropagation()}>
@@ -155,7 +169,7 @@ export default function Recepciones() {
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {r.order_id && (
-                      <button onClick={() => setDetalleId(r.order_id)} title="Ver detalle del pedido"
+                      <button onClick={() => openDetalle(r.order_id)} title="Ver detalle del pedido"
                         className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-800">
                         <Eye className="h-3.5 w-3.5" /> Detalle
                       </button>
@@ -200,7 +214,7 @@ export default function Recepciones() {
         </div>
       )}
 
-      {detalleId && <DetallePedido orderId={detalleId} onClose={() => setDetalleId(null)} />}
+      {detalleId && <DetallePedido orderId={detalleId} onClose={closeDetalle} />}
     </div>
   );
 }

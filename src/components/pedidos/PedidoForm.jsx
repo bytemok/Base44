@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, ChevronDown, CheckCircle2 } from "lucide-react";
 import { STATUS_ORDER } from "./StatusBadge";
 
 const inputClass =
@@ -15,6 +15,7 @@ export default function PedidoForm({ open, onClose, onSave, pedido }) {
     status: "Nuevo",
   });
   const [saving, setSaving] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
 
   useEffect(() => {
     if (pedido) {
@@ -148,7 +149,7 @@ export default function PedidoForm({ open, onClose, onSave, pedido }) {
               name="status"
               value={form.status}
               onChange={handleChange}
-              className={inputClass}
+              className={`${inputClass} hidden md:block`}
             >
               {STATUS_ORDER.map((s) => (
                 <option key={s} value={s}>
@@ -156,6 +157,32 @@ export default function PedidoForm({ open, onClose, onSave, pedido }) {
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={() => setStatusOpen(true)}
+              className={`${inputClass} flex items-center justify-between md:hidden`}
+            >
+              <span>{form.status}</span>
+              <ChevronDown className="h-4 w-4 text-slate-400" />
+            </button>
+            {statusOpen && (
+              <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center sm:p-4" onClick={() => setStatusOpen(false)}>
+                <div className="w-full max-w-sm rounded-t-2xl bg-white p-4 shadow-xl animate-in slide-in-from-bottom duration-200 sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-sm font-semibold text-slate-900">Estado del pedido</h3>
+                    <button type="button" onClick={() => setStatusOpen(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+                  </div>
+                  <div className="divide-y divide-slate-100">
+                    {STATUS_ORDER.map((s) => (
+                      <button key={s} type="button" onClick={() => { setForm((f) => ({ ...f, status: s })); setStatusOpen(false); }} className="flex w-full items-center justify-between px-2 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50">
+                        <span>{s}</span>
+                        {form.status === s && <CheckCircle2 className="h-4 w-4 text-emerald-600" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-3 pt-2">

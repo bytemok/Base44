@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { Plus, Pencil, Trash2, Package, Search, ChevronDown, Eye } from "lucide-react";
 import StatusBadge, { STATUS_ORDER } from "@/components/pedidos/StatusBadge";
 import StatusSelect from "@/components/pedidos/StatusSelect";
@@ -16,7 +17,22 @@ export default function Pedidos() {
   const [search, setSearch] = useState("");
   const [sortDir, setSortDir] = useState("desc");
   const [updatingId, setUpdatingId] = useState(null);
-  const [detalle, setDetalle] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const detalleIdParam = searchParams.get("detail");
+  const detalle = useMemo(
+    () => pedidos.find((p) => p.id === detalleIdParam) || null,
+    [pedidos, detalleIdParam]
+  );
+  const openDetalle = (p) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("detail", p.id);
+    setSearchParams(next);
+  };
+  const closeDetalle = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("detail");
+    setSearchParams(next, { replace: true });
+  };
 
   const loadPedidos = async () => {
     setLoading(true);
@@ -31,6 +47,7 @@ export default function Pedidos() {
   useEffect(() => {
     loadPedidos();
   }, []);
+  usePullToRefresh(loadPedidos);
 
   // "Nueva Venta" abre el formulario automáticamente
   const location = useLocation();
@@ -250,7 +267,7 @@ export default function Pedidos() {
                 filtered.map((p) => (
                   <tr
                     key={p.id}
-                    onClick={() => setDetalle(p)}
+                    onClick={() => openDetalle(p)}
                     className="group cursor-pointer text-sm transition hover:bg-slate-50/60"
                   >
                     <td className="px-4 py-3 font-mono text-xs font-medium text-slate-700">
@@ -277,7 +294,7 @@ export default function Pedidos() {
                     <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          onClick={() => setDetalle(p)}
+                          onClick={() => openDetalle(p)}
                           className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                           title="Ver detalle"
                         >
@@ -325,7 +342,7 @@ export default function Pedidos() {
             filtered.map((p) => (
               <div
                 key={p.id}
-                onClick={() => setDetalle(p)}
+                onClick={() => openDetalle(p)}
                 className="cursor-pointer rounded-xl border border-slate-200 bg-white p-4 transition hover:border-slate-300 active:bg-slate-50"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -361,7 +378,7 @@ export default function Pedidos() {
                   />
                   <div className="flex gap-1">
                     <button
-                      onClick={() => setDetalle(p)}
+                      onClick={() => openDetalle(p)}
                       className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
                       title="Ver detalle"
                     >
@@ -397,7 +414,7 @@ export default function Pedidos() {
         pedido={editing}
       />
 
-      <DetallePedidoLocal pedido={detalle} onClose={() => setDetalle(null)} />
+      <DetallePedidoLocal pedido={detalle} onClose={closeDetalle} />
     </div>
   );
 }
