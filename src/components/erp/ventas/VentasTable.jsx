@@ -39,7 +39,7 @@ export default function VentasTable({ rows, onOpen }) {
                   <div className="flex flex-col gap-0.5">
                     {(r.productos || []).map((p, j) => (
                       <span key={j} className={p.entregado ? "text-emerald-600" : "text-slate-900"}>
-                        {p.nombre}{p.entregado ? " ✓" : ""}
+                        {p.nombre}{p.qty ? ` (${p.qty})` : ""}{p.entregado ? " ✓" : ""}
                       </span>
                     ))}
                     {!(r.productos || []).length && <span className="text-slate-400">—</span>}

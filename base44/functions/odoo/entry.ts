@@ -513,11 +513,11 @@ Deno.serve(async (req) => {
         const oid = Array.isArray(l.order_id) ? l.order_id[0] : null;
         if (!oid) return;
         const nombre = (l.name || m2o(l.product_id) || "").trim();
-        if (/^patas/i.test(nombre)) return; // accesorios no relevantes para el detalle
         const demand = l.product_uom_qty || 0;
         const entregado = l.qty_delivered || 0;
         (linesByOrder[oid] = linesByOrder[oid] || []).push({
           nombre,
+          qty: demand,
           entregado: demand > 0 && entregado >= demand,
         });
       });

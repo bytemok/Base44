@@ -33,7 +33,7 @@ export default function VentasCard({ r, onOpen }) {
       <div className="mt-2 rounded-lg bg-slate-50 p-2 text-xs leading-relaxed text-slate-700">
         {(r.productos || []).length ? (r.productos || []).map((p, j) => (
           <div key={j} className={p.entregado ? "text-emerald-600" : "text-slate-800"}>
-            • {p.nombre}{p.entregado ? " ✓" : ""}
+            • {p.nombre}{p.qty ? ` (${p.qty})` : ""}{p.entregado ? " ✓" : ""}
           </div>
         )) : <span className="text-slate-400">Sin productos</span>}
       </div>
