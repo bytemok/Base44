@@ -895,7 +895,7 @@ Deno.serve(async (req) => {
       await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[payId]]] });
       return Response.json({ resource: "registrar_pago_caja", payment_id: payId, journal_id: journal.id });
     } else if (resource === "entregas_calendario") {
-      const recs = await base44.asServiceRole.entities.EntregaProgramada.list("-fecha_entrega");
+      const recs = await base44.entities.EntregaProgramada.list("-fecha_entrega");
       const orderIds = (recs || []).map((r) => Number(r.odoo_order_id)).filter(Boolean);
       const orders = orderIds.length ? await searchRead("sale.order", [["id", "in", orderIds]], ["id", "name", "partner_id", "carrier_id", "picking_ids"], null, 200) : [];
       const orderMap = {};
