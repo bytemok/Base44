@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 38 54% 94%;
+    --background: 0 0% 100%;
     --foreground: 24 26% 13%;
     --card: 36 48% 98%;
     --card-foreground: 24 26% 13%;
@@ -116,15 +116,15 @@
 
 /* ===== Lumina LUXE theme shim: warms legacy neutral utility classes across the app ===== */
 :root:not(.dark) .bg-white { background-color: hsl(var(--card)); }
-:root:not(.dark) .bg-slate-50 { background-color: hsl(38 54% 94%); }
+:root:not(.dark) .bg-slate-50 { background-color: hsl(0 0% 100%); }
 :root:not(.dark) .bg-slate-100 { background-color: hsl(35 38% 88%); }
 :root:not(.dark) .bg-slate-200 { background-color: hsl(33 31% 82%); }
 :root:not(.dark) .bg-white\/95 { background-color: hsl(var(--card) / 0.95); }
 :root:not(.dark) .bg-white\/90 { background-color: hsl(var(--card) / 0.9); }
 :root:not(.dark) .bg-white\/80 { background-color: hsl(var(--card) / 0.8); }
 :root:not(.dark) .bg-white\/70 { background-color: hsl(var(--card) / 0.7); }
-:root:not(.dark) .bg-slate-50\/80 { background-color: hsl(38 54% 94% / 0.8); }
-:root:not(.dark) .bg-slate-50\/60 { background-color: hsl(38 54% 94% / 0.6); }
+:root:not(.dark) .bg-slate-50\/80 { background-color: hsl(0 0% 100% / 0.8); }
+:root:not(.dark) .bg-slate-50\/60 { background-color: hsl(0 0% 100% / 0.6); }
 :root:not(.dark) .bg-slate-100\/50 { background-color: hsl(35 38% 88% / 0.5); }
 
 :root:not(.dark) .text-slate-900 { color: hsl(24 26% 13%); }
