@@ -3,7 +3,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "alertas_logisticas",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -16,8 +16,8 @@
           },
           "then": "end",
           "x-base44": {
-            "title": "Detectar movimientos log\u00edsticos",
-            "description": "Consulta Odoo y notifica despacho/entrega"
+            "title": "Detectar alertas log\u00edsticas",
+            "description": "Estados y retrasos"
           }
         }
       }
@@ -41,5 +41,5 @@
       "ends_after_count": null
     }
   },
-  "description": "Detecta pedidos que pasan a despacho o entrega en Odoo y notifica a los administradores por email y en la app."
+  "description": "Detecta pedidos que cambian de estado y entregas retrasadas en Odoo, crea notificaciones en la app y avisa por email a administradores."
 }

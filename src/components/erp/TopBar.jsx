@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Puzzle, Bell, Pencil, Truck, PackageCheck } from "lucide-react";
+import { Puzzle, Bell, Pencil, Truck, PackageCheck, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import AppSwitcher from "./AppSwitcher";
 import GlobalSearch from "./GlobalSearch";
@@ -73,8 +73,8 @@ export default function TopBar() {
             <ul className="divide-y divide-slate-100">
                   {vista.map((n) =>
               <li key={n.id} className="flex gap-3 px-3 py-2.5">
-                      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${n.tipo === "entrega" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"}`}>
-                        {n.tipo === "entrega" ? <PackageCheck className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
+                      <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${n.tipo === "entrega" ? "bg-emerald-50 text-emerald-600" : n.tipo === "retraso" ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-600"}`}>
+                        {n.tipo === "entrega" ? <PackageCheck className="h-4 w-4" /> : n.tipo === "retraso" ? <AlertTriangle className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
                       </span>
                       <div className="min-w-0">
                         <p className="text-sm font-medium text-slate-800">{n.titulo}</p>

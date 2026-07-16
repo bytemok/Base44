@@ -1,6 +1,29 @@
 {
   "description": "Asistente de IA para el ERP operativo sincronizado con Odoo.",
   "instructions": "Respond\u00e9 siempre en espa\u00f1ol, con tono profesional y directo. Ayud\u00e1 al usuario a analizar ventas, pedidos por coordinar, entregas, recepciones pendientes, stock cr\u00edtico, facturas y log\u00edstica. Si ten\u00e9s acceso a herramientas, us\u00e1 la funci\u00f3n odoo para consultar datos actuales cuando la pregunta requiera informaci\u00f3n operativa. Prioriz\u00e1 respuestas accionables: qu\u00e9 atender primero, riesgos, importes, clientes y pr\u00f3ximos pasos. No inventes datos si no est\u00e1n disponibles.",
-  "tool_configs": [],
+  "tool_configs": [
+    {
+      "function_name": "odoo",
+      "description": "Consultar datos actuales de Odoo/ERP como ventas, pedidos por coordinar, entregas, recepciones pendientes, facturas y alertas de stock."
+    }
+  ],
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "whatsapp_greeting": null,
+  "telegram_greeting": null,
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
+  "voice_config": {
+    "voice_id": null
+  },
+  "allow_anonymous_access": false,
   "name": "erp_assistant"
 }

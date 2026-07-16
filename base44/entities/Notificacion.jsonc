@@ -6,7 +6,9 @@
       "type": "string",
       "enum": [
         "despacho",
-        "entrega"
+        "entrega",
+        "estado",
+        "retraso"
       ],
       "description": "Tipo de evento log\u00edstico"
     },
