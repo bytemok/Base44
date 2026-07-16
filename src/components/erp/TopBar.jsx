@@ -45,7 +45,7 @@ export default function TopBar() {
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
           <Puzzle className="h-5 w-5" />
         </span>
-        <span className="hidden text-sm font-bold text-slate-800 sm:block"></span>
+        <span className="hidden text-sm font-bold text-slate-800 sm:block">IDEARMARKET B</span>
       </Link>
       <div className="h-6 w-px bg-slate-200" />
       <AppSwitcher />
