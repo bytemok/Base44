@@ -16,8 +16,8 @@ function AppTile({ module }) {
         <Icon className="h-9 w-9 text-brand" />
       </div>
       <span className="text-center text-xs font-medium leading-tight text-slate-700">{module.label}</span>
-    </Link>
-  );
+    </Link>);
+
 }
 
 export default function Dashboard() {
@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl bg-teal-50 px-6 py-8">
+      <div className="rounded-2xl px-6 py-8 bg-[hsl(var(--background))]">
         <h1 className="text-2xl font-semibold text-slate-900">{greeting} 👋</h1>
         <p className="mt-1 text-sm text-slate-500">Elegí una aplicación para empezar.</p>
         <div className="mt-6 flex flex-wrap gap-6">
@@ -42,22 +42,22 @@ export default function Dashboard() {
 
       <DistribucionEstados key={refreshKey} />
 
-      {refreshing && (
-        <div className="flex justify-center py-2">
+      {refreshing &&
+      <div className="flex justify-center py-2">
           <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
         </div>
-      )}
+      }
 
       <AnalisisLogistico key={refreshKey} />
       <LazyMount
         fallback={
-          <div className="flex items-center gap-2 py-8 text-sm text-slate-400">
+        <div className="flex items-center gap-2 py-8 text-sm text-slate-400">
             <Loader2 className="h-5 w-5 animate-spin" /> Cargando reportes...
           </div>
-        }
-      >
+        }>
+        
         <ResumenReportes key={refreshKey} />
       </LazyMount>
-    </div>
-  );
+    </div>);
+
 }
