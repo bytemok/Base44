@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl px-6 py-8 bg-[hsl(var(--background))]">
+      <div className="rounded-2xl px-6 py-8 bg-gray-50">
         <h1 className="text-2xl font-semibold text-slate-900">{greeting} 👋</h1>
         <p className="mt-1 text-sm text-slate-500">Elegí una aplicación para empezar.</p>
         <div className="mt-6 flex flex-wrap gap-6">
