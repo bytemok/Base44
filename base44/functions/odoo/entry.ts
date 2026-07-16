@@ -485,7 +485,7 @@ Deno.serve(async (req) => {
       const orders = await searchRead(
         "sale.order",
         [["state", "=", "sale"]],
-        ["id", "name", "partner_id", "date_order", "amount_total", "picking_ids", "invoice_ids", "carrier_id"],
+        ["id", "name", "partner_id", "date_order", "commitment_date", "amount_total", "picking_ids", "invoice_ids", "carrier_id"],
         "date_order desc",
         200
       );
@@ -538,6 +538,7 @@ Deno.serve(async (req) => {
             id: o.name,
             cliente: m2o(o.partner_id),
             fecha: o.date_order ? o.date_order.slice(0, 10) : "",
+            fecha_entrega: o.commitment_date ? o.commitment_date.slice(0, 10) : "",
             total: o.amount_total || 0,
             picking_ids: pids,
             invoice_ids: o.invoice_ids || [],

@@ -7,6 +7,7 @@ import AnalisisLogistico from "@/components/erp/AnalisisLogistico";
 import ResumenReportes from "@/components/erp/ResumenReportes";
 import DistribucionEstados from "@/components/erp/DistribucionEstados";
 import DashboardOps from "@/components/erp/DashboardOps";
+import DashboardCoordinationPanel from "@/components/erp/DashboardCoordinationPanel";
 import AIAssistantPanel from "@/components/erp/AIAssistantPanel";
 import LazyMount from "@/components/erp/LazyMount";
 
@@ -41,6 +42,8 @@ export default function Dashboard() {
           {MODULES.map((m) => <AppTile key={m.slug} module={m} />)}
         </div>
       </div>
+
+      <DashboardCoordinationPanel key={`coord-${refreshKey}`} />
 
       <DashboardOps key={refreshKey} />
 
