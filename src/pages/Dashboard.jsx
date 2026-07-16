@@ -13,7 +13,7 @@ function AppTile({ module }) {
   return (
     <Link to={module.path} className="group flex w-24 flex-col items-center gap-2.5">
       <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white shadow-md ring-1 ring-slate-100 transition group-hover:-translate-y-0.5 group-hover:shadow-lg">
-        <Icon className="h-9 w-9 text-[hsl(var(--primary))] bg-[hsl(var(--card-foreground))]" />
+        <Icon className="h-9 w-9 bg-[hsl(var(--card-foreground))] text-[hsl(var(--popover))]" />
       </div>
       <span className="text-center text-xs font-medium leading-tight text-slate-700">{module.label}</span>
     </Link>);
