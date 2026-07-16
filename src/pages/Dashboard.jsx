@@ -6,6 +6,8 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import AnalisisLogistico from "@/components/erp/AnalisisLogistico";
 import ResumenReportes from "@/components/erp/ResumenReportes";
 import DistribucionEstados from "@/components/erp/DistribucionEstados";
+import DashboardOps from "@/components/erp/DashboardOps";
+import AIAssistantPanel from "@/components/erp/AIAssistantPanel";
 import LazyMount from "@/components/erp/LazyMount";
 
 function AppTile({ module }) {
@@ -40,7 +42,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <DistribucionEstados key={refreshKey} />
+      <DashboardOps key={refreshKey} />
+
+      <div className="grid gap-4 xl:grid-cols-[1fr_420px]">
+        <DistribucionEstados key={`estados-${refreshKey}`} />
+        <AIAssistantPanel />
+      </div>
 
       {refreshing &&
       <div className="flex justify-center py-2">
