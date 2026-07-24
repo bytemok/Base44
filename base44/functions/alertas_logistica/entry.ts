@@ -1,10 +1,13 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.31";
+import { requireAdmin } from "../../shared/authGuards.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const auth = await requireAdmin(base44);
+    if (auth.response) return auth.response;
 
-    const ODOO_URL = (Deno.env.get("ODOO_URL") || "").replace(/\/$/, "");
+    const ODOO_URL = (Deno.env.get("ODOO_URL") || "").trim().replace(/\/$/, "").replace(/\/(web|odoo)$/, "");
     const ODOO_DB = Deno.env.get("ODOO_DB");
     const ODOO_USER = Deno.env.get("ODOO_USERNAME");
     const ODOO_KEY = Deno.env.get("ODOO_API_KEY");
@@ -19,7 +22,13 @@ Deno.serve(async (req) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", method: "call", params, id: idc++ }),
       });
-      const json = await res.json();
+      const text = await res.text();
+      let json;
+      try {
+        json = text ? JSON.parse(text) : {};
+      } catch (_) {
+        throw new Error("Odoo devolvió una página web en vez de JSON. Revisá que ODOO_URL sea la URL base de la instancia, sin /web.");
+      }
       if (json.error) throw new Error(JSON.stringify(json.error));
       return json.result;
     };

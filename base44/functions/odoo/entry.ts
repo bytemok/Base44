@@ -1,11 +1,13 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.31";
+import { requireAdmin } from "../../shared/authGuards.ts";
 import { createOdooClient, createZonaResolver } from "../../shared/odooCore.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+    const auth = await requireAdmin(base44);
+    if (auth.response) return auth.response;
+    const user = auth.user;
 
     const body = await req.json().catch(() => ({}));
     const resource = body.resource;

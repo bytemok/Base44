@@ -1,4 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { requireAdmin } from "../../shared/authGuards.ts";
 import { createOdooClient, createZonaResolver } from "../../shared/odooCore.ts";
 
 const CONFIG_KEY = "pedidos_pendientes_google_sheets";
@@ -20,6 +21,8 @@ const HEADERS = [
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const auth = await requireAdmin(base44);
+    if (auth.response) return auth.response;
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const now = new Date().toISOString();
 
