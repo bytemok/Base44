@@ -421,7 +421,7 @@ Deno.serve(async (req) => {
         [["state", "=", "sale"]],
         ["id", "name", "partner_id", "date_order", "commitment_date", "amount_total", "picking_ids", "invoice_ids", "carrier_id"],
         "date_order desc",
-        500
+        200
       );
       const orderIds = orders.map((o) => o.id);
       const allPickingIds = [];
