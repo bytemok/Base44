@@ -1,0 +1,49 @@
+{
+  "name": "OdooMirrorRecord",
+  "type": "object",
+  "properties": {
+    "resource": {
+      "type": "string"
+    },
+    "record_key": {
+      "type": "string"
+    },
+    "order_index": {
+      "type": "number",
+      "default": 0
+    },
+    "payload": {
+      "type": "string"
+    },
+    "synced_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "resource",
+    "record_key",
+    "payload"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

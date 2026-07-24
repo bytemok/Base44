@@ -1,0 +1,50 @@
+{
+  "name": "OdooSyncState",
+  "type": "object",
+  "properties": {
+    "resource": {
+      "type": "string"
+    },
+    "last_sync_at": {
+      "type": "string"
+    },
+    "last_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "extra_json": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "resource"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

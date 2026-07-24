@@ -1,6 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { requireAdmin } from "../../shared/authGuards.ts";
 import { createOdooClient, createZonaResolver } from "../../shared/odooCore.ts";
+import { logSecurityEvent } from "../../shared/securityAudit.ts";
 
 const CONFIG_KEY = "pedidos_pendientes_google_sheets";
 const SHEET_TITLE = "Pedidos";
@@ -23,6 +24,8 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const auth = await requireAdmin(base44);
     if (auth.response) return auth.response;
+    const user = auth.user;
+    await logSecurityEvent(base44, user, { area: "sistema", resource: "googlesheets", action: "sync_start", source: "syncPedidosSheets" });
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
     const now = new Date().toISOString();
 
@@ -56,6 +59,7 @@ Deno.serve(async (req) => {
       last_error: "",
       last_sync_at: now,
     });
+    await logSecurityEvent(base44, user, { area: "sistema", resource: "googlesheets", action: "sync_success", source: "syncPedidosSheets", count: pedidos.length });
 
     return Response.json({ ok: true, count: pedidos.length, spreadsheet_url: config.spreadsheet_url });
   } catch (error) {

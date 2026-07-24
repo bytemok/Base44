@@ -1,6 +1,8 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.31";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { requireAdmin } from "../../shared/authGuards.ts";
 import { createOdooClient, createZonaResolver } from "../../shared/odooCore.ts";
+import { cacheKeyFor, isCacheableResource, readCachedResource, saveCachedResource, markCacheError } from "../../shared/odooMirror.ts";
+import { logSensitiveAccess } from "../../shared/securityAudit.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -12,6 +14,15 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const resource = body.resource;
     const limit = Math.min(Number(body.limit) || 100, 200);
+    const cacheKey = cacheKeyFor(resource, body);
+
+    if (isCacheableResource(resource) && !body.force_refresh) {
+      const cached = await readCachedResource(base44, cacheKey);
+      if (cached) {
+        await logSensitiveAccess(base44, user, resource, cached.count, "cache");
+        return Response.json(cached);
+      }
+    }
 
     const WRITE_RESOURCES = new Set([
       "guardar_producto", "recibir_pickings", "coordinar_pedido", "control_stock_aplicar",
@@ -518,6 +529,7 @@ Deno.serve(async (req) => {
       if (iids.length) {
         invoices = await searchRead("account.move", [["id", "in", iids]], ["name", "invoice_date", "amount_total", "amount_residual", "state", "payment_state"], null, 50);
       }
+      await logSensitiveAccess(base44, user, resource, 1, "odoo", String(orderId));
       return Response.json({
         resource: "detalle",
         data: {
@@ -975,8 +987,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }
 
-    return Response.json({ resource, count: rows.length, data: rows, ...extra });
+    const responsePayload = { resource, count: rows.length, data: rows, ...extra };
+    if (isCacheableResource(resource)) await saveCachedResource(base44, cacheKey, rows, extra);
+    await logSensitiveAccess(base44, user, resource, rows.length, "odoo");
+    return Response.json(responsePayload);
   } catch (error) {
+    try {
+      const base44 = createClientFromRequest(req);
+      const body = await req.json().catch(() => ({}));
+      const key = cacheKeyFor(body.resource, body);
+      if (key) await markCacheError(base44, key, error);
+    } catch (_) {}
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

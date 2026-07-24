@@ -1,11 +1,13 @@
-import { createClientFromRequest } from "npm:@base44/sdk@0.8.31";
+import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { requireAdmin } from "../../shared/authGuards.ts";
+import { logSecurityEvent } from "../../shared/securityAudit.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const auth = await requireAdmin(base44);
     if (auth.response) return auth.response;
+    const user = auth.user;
 
     const ODOO_URL = (Deno.env.get("ODOO_URL") || "").trim().replace(/\/$/, "").replace(/\/(web|odoo)$/, "");
     const ODOO_DB = Deno.env.get("ODOO_DB");
@@ -148,6 +150,7 @@ Deno.serve(async (req) => {
       } catch (e) {}
     }
 
+    await logSecurityEvent(base44, user, { area: "sistema", resource: "alertas_logistica", action: "validated_notifications", source: "alertas_logistica", count: nuevas.length });
     return Response.json({ resource: "alertas_logistica", revisados: (pickings || []).length, atrasados: (atrasados || []).length, nuevas: nuevas.length });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

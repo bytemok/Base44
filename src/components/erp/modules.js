@@ -1,4 +1,4 @@
-import { LayoutDashboard, ShoppingCart, ClipboardList, CalendarDays, Inbox, Package, Users, Receipt, Boxes, Send, ScanLine, ArrowLeftRight, Layers, Barcode, AlertTriangle, Star, Map, Settings, PackageCheck, BarChart3, PackagePlus, Route } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, ClipboardList, CalendarDays, Inbox, Package, Users, Receipt, Boxes, Send, ScanLine, ArrowLeftRight, Layers, Barcode, AlertTriangle, Star, Map, Settings, PackageCheck, BarChart3, PackagePlus, Route, ShieldCheck } from "lucide-react";
 
 export const MODULES = [
   { slug: "dashboard", label: "Dashboard", icon: LayoutDashboard, section: "Operación", path: "/" },
@@ -22,6 +22,7 @@ export const MODULES = [
   { slug: "reportes", label: "Reportes", icon: BarChart3, section: "Sistema", path: "/reportes" },
   { slug: "reporte-satisfaccion", label: "Satisfacción", icon: Star, section: "Sistema", path: "/reporte-satisfaccion" },
   { slug: "gestion-zonas", label: "Zonas", icon: Map, section: "Sistema", path: "/gestion-zonas" },
+  { slug: "auditoria", label: "Auditoría", icon: ShieldCheck, section: "Sistema", path: "/auditoria" },
   { slug: "perfil", label: "Perfil", icon: Settings, section: "Sistema", path: "/perfil" },
 ];
 

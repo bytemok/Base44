@@ -1,0 +1,71 @@
+{
+  "name": "SecurityAuditLog",
+  "type": "object",
+  "properties": {
+    "area": {
+      "type": "string"
+    },
+    "resource": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "user_email": {
+      "type": "string"
+    },
+    "user_name": {
+      "type": "string"
+    },
+    "user_role": {
+      "type": "string"
+    },
+    "record_ref": {
+      "type": "string"
+    },
+    "count": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "area",
+    "resource",
+    "action",
+    "created_at"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "description": "Actualiza el espejo local de datos operativos de Odoo para reducir consultas en vivo.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/15 7-21 * * *",
+      "one_time_date": null,
+      "timezone": "America/Buenos_Aires",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Sincronizar cach\u00e9 de Odoo",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "sincronizar_cache_odoo",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "sincronizar_cache": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncOdooMirror",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Sincronizar cach\u00e9",
+            "description": "Refresca datos de Odoo"
+          }
+        }
+      }
+    ]
+  }
+}

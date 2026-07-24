@@ -32,6 +32,7 @@ import AlertasStock from '@/pages/AlertasStock';
 import Reportes from '@/pages/Reportes';
 import Etiquetas from '@/pages/Etiquetas';
 import Perfil from '@/pages/Perfil';
+import AuditoriaSeguridad from '@/pages/AuditoriaSeguridad';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -84,6 +85,7 @@ const AuthenticatedApp = () => {
           <Route path="/reporte-satisfaccion" element={<ReporteSatisfaccion />} />
           <Route path="/gestion-zonas" element={<GestionZonas />} />
           <Route path="/alertas-stock" element={<AlertasStock />} />
+          <Route path="/auditoria" element={<AuditoriaSeguridad />} />
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/compras" element={<Compras />} />
           <Route path="/hojas-ruta" element={<HojasRuta />} />

@@ -7,7 +7,7 @@ import { base44 } from "@/api/base44Client";
 // a backend change) self-heals instead of staying frozen.
 const cache = new Map();      // key -> { data, meta, ts }
 const inflight = new Map();   // key -> Promise
-const TTL = 30000;             // 30s
+const TTL = 5 * 60 * 1000;     // 5 min
 
 const keyOf = (resource, limit) => `${resource}:${limit || ""}`;
 
