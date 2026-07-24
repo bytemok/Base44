@@ -11,11 +11,11 @@ const TTL = 5 * 60 * 1000;     // 5 min
 
 const keyOf = (resource, limit) => `${resource}:${limit || ""}`;
 
-function networkFetch(resource, limit, ignoreInflight = false) {
+function networkFetch(resource, limit, ignoreInflight = false, forceRefresh = false) {
   const key = keyOf(resource, limit);
   if (!ignoreInflight && inflight.has(key)) return inflight.get(key);
   const p = base44.functions
-    .invoke("odoo", { resource, limit })
+    .invoke("odoo", { resource, limit, force_refresh: forceRefresh })
     .then((res) => {
       const data = res.data?.data || [];
       const meta = res.data || null;
@@ -55,7 +55,7 @@ export function useOdoo(resource, limit, opts = {}) {
     setError(null);
     if (isFresh && !force && !fresh) return; // fresh enough — skip the network (dedup + cache win)
     try {
-      const { data: d, meta: m } = await networkFetch(resource, limit, force || fresh);
+      const { data: d, meta: m } = await networkFetch(resource, limit, force || fresh, force || fresh);
       if (!alive.current) return;
       setData(d);
       setMeta(m);
