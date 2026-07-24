@@ -421,7 +421,7 @@ Deno.serve(async (req) => {
         [["state", "=", "sale"]],
         ["id", "name", "partner_id", "date_order", "commitment_date", "amount_total", "picking_ids", "invoice_ids", "carrier_id"],
         "date_order desc",
-        200
+        500
       );
       const orderIds = orders.map((o) => o.id);
       const allPickingIds = [];
@@ -435,10 +435,10 @@ Deno.serve(async (req) => {
       });
       // picks / partners / lines / facturas son independientes entre sí -> paralelo para no sumar latencia
       const [picks, partners, lines, invoices] = await Promise.all([
-        allPickingIds.length ? searchRead("stock.picking", [["id", "in", allPickingIds]], ["id", "state"], null, 200) : Promise.resolve([]),
-        partnerIds.length ? searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city", "phone"], null, 300) : Promise.resolve([]),
-        orderIds.length ? searchRead("sale.order.line", [["order_id", "in", orderIds]], ["id", "order_id", "name", "product_id", "product_uom_qty", "qty_delivered"], "sequence", 500) : Promise.resolve([]),
-        allInvoiceIds.length ? searchRead("account.move", [["id", "in", Array.from(new Set(allInvoiceIds))]], ["id", "amount_residual", "state"], null, 300) : Promise.resolve([]),
+        allPickingIds.length ? searchRead("stock.picking", [["id", "in", allPickingIds]], ["id", "state"], null, 1000) : Promise.resolve([]),
+        partnerIds.length ? searchRead("res.partner", [["id", "in", Array.from(new Set(partnerIds))]], ["id", "city", "phone"], null, 1000) : Promise.resolve([]),
+        orderIds.length ? searchRead("sale.order.line", [["order_id", "in", orderIds]], ["id", "order_id", "name", "product_id", "product_uom_qty", "qty_delivered"], "sequence", 2000) : Promise.resolve([]),
+        allInvoiceIds.length ? searchRead("account.move", [["id", "in", Array.from(new Set(allInvoiceIds))]], ["id", "amount_residual", "state"], null, 1000) : Promise.resolve([]),
       ]);
       const pickingState = {};
       picks.forEach((p) => (pickingState[p.id] = p.state));
@@ -454,7 +454,7 @@ Deno.serve(async (req) => {
         const nombre = (l.name || m2o(l.product_id) || "").trim();
         const demand = l.product_uom_qty || 0;
         const entregado = l.qty_delivered || 0;
-        const noValida = /^envio\s+a\b/i.test(nombre) || /^patas\b/i.test(nombre) || /^peones\b/i.test(nombre) || /^adicional\b/i.test(nombre);
+        const noValida = /^envio\b/i.test(nombre) || /^patas\b/i.test(nombre) || /^pe[oó]n(?:es)?\b/i.test(nombre) || /^adicional\b/i.test(nombre);
         (linesByOrder[oid] = linesByOrder[oid] || []).push({
           nombre,
           qty: demand,
