@@ -154,8 +154,10 @@ async function loadPendingOrders(base44) {
   lines.forEach((l) => {
     const oid = Array.isArray(l.order_id) ? l.order_id[0] : null;
     if (!oid) return;
+    const nombre = l.name || "";
     const qty = l.product_uom_qty || 0;
-    (linesByOrder[oid] = linesByOrder[oid] || []).push({ nombre: l.name || "", qty, entregado: qty > 0 && (l.qty_delivered || 0) >= qty });
+    const esEnvio = /^envio\s+a\b/i.test(nombre.trim());
+    (linesByOrder[oid] = linesByOrder[oid] || []).push({ nombre, qty, entregado: esEnvio || (qty > 0 && (l.qty_delivered || 0) >= qty) });
   });
 
   return orders
