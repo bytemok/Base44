@@ -156,8 +156,8 @@ async function loadPendingOrders(base44) {
     if (!oid) return;
     const nombre = l.name || "";
     const qty = l.product_uom_qty || 0;
-    const esEnvio = /^envio\s+a\b/i.test(nombre.trim());
-    (linesByOrder[oid] = linesByOrder[oid] || []).push({ nombre, qty, entregado: esEnvio || (qty > 0 && (l.qty_delivered || 0) >= qty) });
+    const noValida = /^envio\s+a\b/i.test(nombre.trim()) || /^patas\b/i.test(nombre.trim());
+    (linesByOrder[oid] = linesByOrder[oid] || []).push({ nombre, qty, entregado: noValida || (qty > 0 && (l.qty_delivered || 0) >= qty) });
   });
 
   return orders
