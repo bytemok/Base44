@@ -465,6 +465,8 @@ Deno.serve(async (req) => {
           const pids = o.picking_ids || [];
           const states = pids.map((id) => pickingState[id] || "draft");
           const delivered = pids.length > 0 && states.every((s) => s === "done");
+          const productos = linesByOrder[o.id] || [];
+          const productosCompletos = productos.length > 0 && productos.every((p) => p.entregado);
           const pid = Array.isArray(o.partner_id) ? o.partner_id[0] : null;
           const carrier = m2o(o.carrier_id);
           return {
@@ -479,13 +481,13 @@ Deno.serve(async (req) => {
             transferencias: pids.length,
             entregado: delivered,
             sin_entregar: !delivered,
-            listo: states.some((s) => s === "assigned"),
+            listo: states.some((s) => s === "assigned") || productosCompletos,
             ciudad: partnerCity[pid] || "",
             telefono: partnerPhone[pid] || "",
             transporte: carrier,
             zona: zonaDe(partnerCity[pid] || "", carrier),
             adeudado: (o.invoice_ids || []).reduce((s, id) => s + (invoiceResidual[id] || 0), 0),
-            productos: linesByOrder[o.id] || [],
+            productos,
           };
         });
       extra.odoo_url = ODOO_URL;

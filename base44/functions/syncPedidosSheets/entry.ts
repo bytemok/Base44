@@ -163,7 +163,9 @@ async function loadPendingOrders(base44) {
       const pids = o.picking_ids || [];
       const states = pids.map((id) => pickState[id] || "draft");
       const delivered = pids.length > 0 && states.every((s) => s === "done");
-      const ready = pids.length > 0 && states.some((s) => s === "assigned");
+      const productos = linesByOrder[o.id] || [];
+      const productosCompletos = productos.length > 0 && productos.every((p) => p.entregado);
+      const ready = (pids.length > 0 && states.some((s) => s === "assigned")) || productosCompletos;
       const partnerId = Array.isArray(o.partner_id) ? o.partner_id[0] : null;
       const partner = partnerMap[partnerId] || {};
       const carrier = m2o(o.carrier_id);
@@ -178,7 +180,7 @@ async function loadPendingOrders(base44) {
         total: o.amount_total || 0,
         adeudado: (o.invoice_ids || []).reduce((s, id) => s + (invoiceResidual[id] || 0), 0),
         transferencias: pids.length,
-        productos: linesByOrder[o.id] || [],
+        productos,
         listo: ready,
         sin_entregar: !delivered,
       };
