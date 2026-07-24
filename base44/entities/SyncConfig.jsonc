@@ -1,0 +1,28 @@
+{
+  "name": "SyncConfig",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "spreadsheet_id": {
+      "type": "string"
+    },
+    "spreadsheet_url": {
+      "type": "string"
+    },
+    "last_count": {
+      "type": "number",
+      "default": 0
+    },
+    "last_error": {
+      "type": "string"
+    },
+    "last_sync_at": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key"
+  ]
+}
