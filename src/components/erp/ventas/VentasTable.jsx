@@ -29,7 +29,7 @@ export default function VentasTable({ rows, onOpen }) {
           {rows.map((r, i) => {
             const e = estadoDe(r);
             return (
-              <tr key={i} onClick={() => onOpen?.(r.db_id)} className="cursor-pointer hover:bg-slate-50">
+              <tr key={r.db_id || r.id || i} onClick={() => onOpen?.(r.db_id)} className="cursor-pointer hover:bg-slate-50">
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-600">{r.fecha}</td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap font-semibold text-slate-900">{r.id}</td>
                 <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-800 uppercase">{r.cliente}</td>

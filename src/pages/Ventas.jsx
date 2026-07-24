@@ -14,6 +14,16 @@ const TABS = [
   { id: "entregados", label: "Entregados", filter: (r) => r.entregado },
 ];
 
+const uniqueRows = (rows) => {
+  const seen = new Set();
+  return (rows || []).filter((r) => {
+    const key = r.db_id || r.id;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export default function Ventas() {
   const { data, loading, error, reload } = useOdoo("ventas", undefined, { fresh: true });
   const [tab, setTab] = useState("pendiente");
@@ -24,7 +34,7 @@ export default function Ventas() {
 
   const rows = useMemo(() => {
     const f = TABS.find((t) => t.id === tab)?.filter || (() => true);
-    let out = data.filter(f);
+    let out = uniqueRows(data).filter(f);
     if (q.trim()) {
       const t = q.toLowerCase();
       out = out.filter((r) => (r.id || "").toLowerCase().includes(t) || (r.cliente || "").toLowerCase().includes(t));
@@ -38,7 +48,7 @@ export default function Ventas() {
   const ESTADO_LABEL = { entregado: "Entregado", listo: "Listo", pendiente: "Pendiente" };
   const handleExport = () => {
     const headers = ["Fecha", "Orden", "Cliente", "Teléfono", "Localidad", "Productos", "Total", "Adeudado", "Estado"];
-    const rows = data.map((r) => [
+    const rows = uniqueRows(data).map((r) => [
       r.fecha || "",
       r.id || "",
       (r.cliente || "").toUpperCase(),

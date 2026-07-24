@@ -54,7 +54,12 @@ export async function readCachedResource(base44, resourceKey, maxAgeMs = DEFAULT
   if (Date.now() - Date.parse(state.last_sync_at) > maxAgeMs) return null;
 
   const records = await base44.asServiceRole.entities.OdooMirrorRecord.filter({ resource: resourceKey }, "order_index", 1000);
-  const data = (records || []).map((r) => {
+  const seen = new Set();
+  const data = (records || []).filter((r) => {
+    if (seen.has(r.record_key)) return false;
+    seen.add(r.record_key);
+    return true;
+  }).map((r) => {
     try {
       return JSON.parse(r.payload || "{}");
     } catch (_) {
@@ -76,7 +81,13 @@ export async function saveCachedResource(base44, resourceKey, rows, extra = {}) 
   const now = new Date().toISOString();
   await base44.asServiceRole.entities.OdooMirrorRecord.deleteMany({ resource: resourceKey });
 
-  const payloads = (rows || []).map((row, index) => ({
+  const seen = new Set();
+  const payloads = (rows || []).filter((row, index) => {
+    const key = recordKey(row, index);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).map((row, index) => ({
     resource: resourceKey,
     record_key: recordKey(row, index),
     order_index: index,
