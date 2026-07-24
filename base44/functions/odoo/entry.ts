@@ -454,7 +454,7 @@ Deno.serve(async (req) => {
         const nombre = (l.name || m2o(l.product_id) || "").trim();
         const demand = l.product_uom_qty || 0;
         const entregado = l.qty_delivered || 0;
-        const noValida = /^envio\s+a\b/i.test(nombre) || /^patas\b/i.test(nombre);
+        const noValida = /^envio\s+a\b/i.test(nombre) || /^patas\b/i.test(nombre) || /^peones\b/i.test(nombre) || /^adicional\b/i.test(nombre);
         (linesByOrder[oid] = linesByOrder[oid] || []).push({
           nombre,
           qty: demand,
