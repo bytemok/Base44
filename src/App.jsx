@@ -30,6 +30,7 @@ import ReporteSatisfaccion from '@/pages/ReporteSatisfaccion';
 import GestionZonas from '@/pages/GestionZonas';
 import AlertasStock from '@/pages/AlertasStock';
 import Reportes from '@/pages/Reportes';
+import ReporteZonas from '@/pages/ReporteZonas';
 import Etiquetas from '@/pages/Etiquetas';
 import Perfil from '@/pages/Perfil';
 import AuditoriaSeguridad from '@/pages/AuditoriaSeguridad';
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
           <Route path="/alertas-stock" element={<AlertasStock />} />
           <Route path="/auditoria" element={<AuditoriaSeguridad />} />
           <Route path="/reportes" element={<Reportes />} />
+          <Route path="/reporte-zonas" element={<ReporteZonas />} />
           <Route path="/compras" element={<Compras />} />
           <Route path="/hojas-ruta" element={<HojasRuta />} />
           <Route path="/perfil" element={<Perfil />} />

@@ -6,6 +6,16 @@ import { useOdoo } from "@/hooks/useOdoo";
 
 const money = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
+const uniqueRows = (rows) => {
+  const seen = new Set();
+  return (rows || []).filter((r) => {
+    const key = r.db_id || r.id;
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 export default function DashboardCoordinationPanel() {
   const { data, loading, error } = useOdoo("ventas", undefined, { fresh: true });
   const [coordinadas, setCoordinadas] = useState([]);
@@ -16,7 +26,7 @@ export default function DashboardCoordinationPanel() {
 
   const pendientes = useMemo(() => {
     const ya = new Set(coordinadas.map((c) => c.order_ref));
-    return data
+    return uniqueRows(data)
       .filter((r) => r.listo && r.sin_entregar && !ya.has(r.id))
       .sort((a, b) => (a.fecha_entrega || a.fecha || "9999-12-31").localeCompare(b.fecha_entrega || b.fecha || "9999-12-31"))
       .slice(0, 8);

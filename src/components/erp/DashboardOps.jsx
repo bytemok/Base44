@@ -28,6 +28,16 @@ function Kpi({ icon: Icon, label, value, hint, to, tone = "amber" }) {
   return to ? <Link to={to}>{body}</Link> : body;
 }
 
+const uniqueRows = (rows, keyOf = (r) => r.db_id || r.id) => {
+  const seen = new Set();
+  return (rows || []).filter((r) => {
+    const key = keyOf(r);
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+};
+
 function MiniList({ title, rows, empty, render, to }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -48,12 +58,15 @@ export default function DashboardOps() {
   const entregas = useOdoo("entregas_calendario");
   const alertas = useOdoo("alertas_stock");
 
+  const recepcionRows = uniqueRows(recepciones.data, (r) => r.picking_id || r.referencia);
+
   const stats = useMemo(() => {
-    const ready = ventas.data.filter((r) => r.sin_entregar && r.listo);
-    const coordinar = ventas.data.filter((r) => r.sin_entregar && !r.listo);
-    const deuda = ventas.data.reduce((s, r) => s + (Number(r.adeudado) || 0), 0);
-    const hoy = new Date().toISOString().slice(0, 10);
-    const saleHoy = entregas.data.filter((r) => r.fecha_entrega === hoy && r.estado !== "Entregada");
+    const ventaRows = uniqueRows(ventas.data);
+    const ready = ventaRows.filter((r) => r.sin_entregar && r.listo);
+    const coordinar = ventaRows.filter((r) => r.sin_entregar && !r.listo);
+    const deuda = ventaRows.reduce((s, r) => s + (Number(r.adeudado) || 0), 0);
+    const hoy = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Buenos_Aires" });
+    const saleHoy = uniqueRows(entregas.data, (r) => r.id || r.order_ref).filter((r) => r.fecha_entrega === hoy && r.estado !== "Entregada");
     return { ready, coordinar, deuda, saleHoy };
   }, [ventas.data, entregas.data]);
 
@@ -67,14 +80,14 @@ export default function DashboardOps() {
         <Kpi icon={Truck} label="Sale hoy" value={stats.saleHoy.length} hint="Entregas programadas" to="/calendario" tone="dark" />
         <Kpi icon={PackageCheck} label="Listo para salir" value={stats.ready.length} hint="Preparado en depósito" to="/ventas" tone="green" />
         <Kpi icon={ClipboardList} label="Para coordinar" value={stats.coordinar.length} hint="Pendiente de preparar" to="/coordinar" tone="amber" />
-        <Kpi icon={Inbox} label="Falta que llegue" value={recepciones.data.length} hint="Recepciones abiertas" to="/recepciones" tone="blue" />
+        <Kpi icon={Inbox} label="Falta que llegue" value={recepcionRows.length} hint="Recepciones abiertas" to="/recepciones" tone="blue" />
         <Kpi icon={AlertTriangle} label="Stock crítico" value={alertas.data.length} hint="Productos faltantes" to="/alertas-stock" tone="red" />
         <Kpi icon={Wallet} label="Adeudado" value={money.format(stats.deuda)} hint="Saldo en ventas" to="/facturas" tone="amber" />
       </div>
       <div className="grid gap-4 lg:grid-cols-3">
         <MiniList title="Próximas salidas" to="/ventas" empty="Sin pedidos listos." rows={stats.ready} render={(r) => <div key={r.id} className="rounded-xl bg-slate-50 px-3 py-2 text-sm"><b className="text-slate-900">{r.id}</b><span className="ml-2 text-slate-600">{r.cliente}</span><p className="text-xs text-slate-400">{r.ciudad || "Sin localidad"} · {money.format(r.total || 0)}</p></div>} />
         <MiniList title="Pendiente de coordinar" to="/coordinar" empty="No hay pedidos pendientes." rows={stats.coordinar} render={(r) => <div key={r.id} className="rounded-xl bg-slate-50 px-3 py-2 text-sm"><b className="text-slate-900">{r.id}</b><span className="ml-2 text-slate-600">{r.cliente}</span><p className="text-xs text-slate-400">{(r.productos || []).length} productos · {r.zona || "Sin zona"}</p></div>} />
-        <MiniList title="Recepciones pendientes" to="/recepciones" empty="Sin recepciones abiertas." rows={recepciones.data} render={(r) => <div key={r.picking_id || r.referencia} className="rounded-xl bg-slate-50 px-3 py-2 text-sm"><b className="text-slate-900">{r.referencia}</b><span className="ml-2 text-slate-600">{r.proveedor || r.origen}</span><p className="text-xs text-slate-400">{r.fecha || "Sin fecha"} · {(r.productos || []).length} ítems</p></div>} />
+        <MiniList title="Recepciones pendientes" to="/recepciones" empty="Sin recepciones abiertas." rows={recepcionRows} render={(r) => <div key={r.picking_id || r.referencia} className="rounded-xl bg-slate-50 px-3 py-2 text-sm"><b className="text-slate-900">{r.referencia}</b><span className="ml-2 text-slate-600">{r.proveedor || r.origen}</span><p className="text-xs text-slate-400">{r.fecha || "Sin fecha"} · {(r.productos || []).length} ítems</p></div>} />
       </div>
     </section>
   );
