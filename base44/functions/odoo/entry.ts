@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Forbidden: se requiere rol admin" }, { status: 403 });
     }
 
-    const { ODOO_URL, ODOO_DB, ODOO_KEY, rpc, searchRead, searchReadAll, m2o, reportUrl } = await createOdooClient(limit);
+    const { ODOO_URL, ODOO_DB, ODOO_KEY, uid, rpc, searchRead, searchReadAll, m2o, reportUrl } = await createOdooClient(limit);
     const { zonaDe } = await createZonaResolver(base44);
     // Resuelve una lista de ids de product.template.attribute.value a {atributo, valor}
     const resolvePtavs = async (ptavIds) => {

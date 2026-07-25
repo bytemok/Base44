@@ -1,14 +1,20 @@
 export const m2o = (v) => (Array.isArray(v) ? v[1] : v || "");
 
 function normalizeOdooUrl(url) {
-  return url.trim().replace(/\/$/, "").replace(/\/(web|odoo)$/, "");
+  const raw = (url || "").trim();
+  try {
+    const parsed = new URL(raw);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch (_) {
+    return raw.replace(/\/$/, "").replace(/\/(web|odoo)$/, "");
+  }
 }
 
 export async function createOdooClient(defaultLimit = 100) {
   const ODOO_URL = normalizeOdooUrl(Deno.env.get("ODOO_URL") || "");
-  const ODOO_DB = Deno.env.get("ODOO_DB");
-  const ODOO_USER = Deno.env.get("ODOO_USERNAME");
-  const ODOO_KEY = Deno.env.get("ODOO_API_KEY");
+  const ODOO_DB = (Deno.env.get("ODOO_DB") || "").trim();
+  const ODOO_USER = (Deno.env.get("ODOO_USERNAME") || "").trim();
+  const ODOO_KEY = (Deno.env.get("ODOO_API_KEY") || "").trim();
   if (!ODOO_URL || !ODOO_DB || !ODOO_USER || !ODOO_KEY) throw new Error("Faltan credenciales de Odoo");
 
   let idc = 1;
@@ -29,12 +35,32 @@ export async function createOdooClient(defaultLimit = 100) {
     return json.result;
   };
 
-  const uid = await rpc("/jsonrpc", {
-    service: "common",
-    method: "authenticate",
-    args: [ODOO_DB, ODOO_USER, ODOO_KEY, {}],
-  });
-  if (!uid) throw new Error("No se pudo autenticar en Odoo");
+  const dbCandidates = Array.from(new Set([
+    ODOO_DB,
+    (() => {
+      try {
+        const host = new URL(ODOO_URL).hostname;
+        return host.endsWith(".odoo.com") ? host.replace(/\.odoo\.com$/, "") : "";
+      } catch (_) {
+        return "";
+      }
+    })(),
+  ].map((db) => (db || "").trim()).filter(Boolean)));
+
+  let uid = null;
+  let AUTH_DB = ODOO_DB;
+  for (const db of dbCandidates) {
+    uid = await rpc("/jsonrpc", {
+      service: "common",
+      method: "authenticate",
+      args: [db, ODOO_USER, ODOO_KEY, {}],
+    }).catch(() => null);
+    if (uid) {
+      AUTH_DB = db;
+      break;
+    }
+  }
+  if (!uid) throw new Error("No se pudo autenticar en Odoo. Revisá base de datos, usuario y API key.");
 
   const searchRead = async (model, domain, fields, order, lim, offset) => {
     const kwargs = { fields, limit: lim || defaultLimit };
@@ -43,7 +69,7 @@ export async function createOdooClient(defaultLimit = 100) {
     return rpc("/jsonrpc", {
       service: "object",
       method: "execute_kw",
-      args: [ODOO_DB, uid, ODOO_KEY, model, "search_read", [domain], kwargs],
+      args: [AUTH_DB, uid, ODOO_KEY, model, "search_read", [domain], kwargs],
     });
   };
 
@@ -60,7 +86,7 @@ export async function createOdooClient(defaultLimit = 100) {
   };
 
   const reportUrl = (report, ids) => `${ODOO_URL}/report/pdf/${report}/${ids.join(",")}`;
-  return { ODOO_URL, ODOO_DB, ODOO_KEY, uid, rpc, searchRead, searchReadAll, m2o, reportUrl };
+  return { ODOO_URL, ODOO_DB: AUTH_DB, ODOO_KEY, uid, rpc, searchRead, searchReadAll, m2o, reportUrl };
 }
 
 const DEFAULT_ZONAS = {
