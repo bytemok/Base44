@@ -39,7 +39,7 @@ export async function createOdooClient(defaultLimit = 100) {
     return parseOdooResponse(res);
   };
 
-  const dbCandidates = Array.from(new Set([
+  let dbCandidates = Array.from(new Set([
     ODOO_DB,
     (() => {
       try {
@@ -50,6 +50,11 @@ export async function createOdooClient(defaultLimit = 100) {
       }
     })(),
   ].map((db) => (db || "").trim()).filter(Boolean)));
+
+  const discoveredDbs = await jsonRpc("/web/database/list", {}).catch(() => []);
+  if (Array.isArray(discoveredDbs) && discoveredDbs.length) {
+    dbCandidates = Array.from(new Set([...dbCandidates, ...discoveredDbs.map((db) => (db || "").trim()).filter(Boolean)]));
+  }
 
   let uid = null;
   let AUTH_DB = ODOO_DB;
