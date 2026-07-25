@@ -18,12 +18,7 @@ export async function createOdooClient(defaultLimit = 100) {
   if (!ODOO_URL || !ODOO_DB || !ODOO_USER || !ODOO_KEY) throw new Error("Faltan credenciales de Odoo");
 
   let idc = 1;
-  const rpc = async (endpoint, params) => {
-    const res = await fetch(ODOO_URL + endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", method: "call", params, id: idc++ }),
-    });
+  const parseOdooResponse = async (res) => {
     const text = await res.text();
     let json;
     try {
@@ -33,6 +28,15 @@ export async function createOdooClient(defaultLimit = 100) {
     }
     if (json.error) throw new Error(JSON.stringify(json.error));
     return json.result;
+  };
+
+  const jsonRpc = async (endpoint, params) => {
+    const res = await fetch(ODOO_URL + endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "call", params, id: idc++ }),
+    });
+    return parseOdooResponse(res);
   };
 
   const dbCandidates = Array.from(new Set([
@@ -49,8 +53,11 @@ export async function createOdooClient(defaultLimit = 100) {
 
   let uid = null;
   let AUTH_DB = ODOO_DB;
+  let authMode = "jsonrpc";
+  let sessionCookie = "";
+
   for (const db of dbCandidates) {
-    uid = await rpc("/jsonrpc", {
+    uid = await jsonRpc("/jsonrpc", {
       service: "common",
       method: "authenticate",
       args: [db, ODOO_USER, ODOO_KEY, {}],
@@ -60,7 +67,45 @@ export async function createOdooClient(defaultLimit = 100) {
       break;
     }
   }
+
+  if (!uid) {
+    for (const db of dbCandidates) {
+      const res = await fetch(ODOO_URL + "/web/session/authenticate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", method: "call", params: { db, login: ODOO_USER, password: ODOO_KEY }, id: idc++ }),
+      }).catch(() => null);
+      if (!res) continue;
+      const rawCookie = res.headers.get("set-cookie") || "";
+      const result = await parseOdooResponse(res).catch(() => null);
+      if (result?.uid) {
+        uid = result.uid;
+        AUTH_DB = db;
+        authMode = "session";
+        sessionCookie = rawCookie.split(";")[0] || "";
+        break;
+      }
+    }
+  }
+
   if (!uid) throw new Error("No se pudo autenticar en Odoo. Revisá base de datos, usuario y API key.");
+
+  const callKw = async (model, method, args = [], kwargs = {}) => {
+    const res = await fetch(`${ODOO_URL}/web/dataset/call_kw/${model}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(sessionCookie ? { Cookie: sessionCookie } : {}) },
+      body: JSON.stringify({ jsonrpc: "2.0", method: "call", params: { model, method, args, kwargs }, id: idc++ }),
+    });
+    return parseOdooResponse(res);
+  };
+
+  const rpc = async (endpoint, params) => {
+    if (authMode === "session" && endpoint === "/jsonrpc" && params?.service === "object" && params?.method === "execute_kw") {
+      const [, , , model, method, args = [], kwargs = {}] = params.args || [];
+      return callKw(model, method, args, kwargs || {});
+    }
+    return jsonRpc(endpoint, params);
+  };
 
   const searchRead = async (model, domain, fields, order, lim, offset) => {
     const kwargs = { fields, limit: lim || defaultLimit };
