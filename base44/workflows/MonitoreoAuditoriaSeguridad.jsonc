@@ -1,0 +1,47 @@
+{
+  "name": "Monitoreo de Auditor\u00eda de Seguridad",
+  "description": "Monitorea registros de auditor\u00eda, alerta al administrador y bloquea temporalmente la sincronizaci\u00f3n ante eventos sospechosos.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "SecurityAuditLog",
+      "events": [
+        "create"
+      ]
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "monitoreo_auditoria_seguridad",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "analizar_evento": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "securityAuditMonitor",
+            "args": {
+              "audit_id": "${ .trigger.entity_id }",
+              "status": "${ .trigger.data.status }",
+              "action": "${ .trigger.data.action }",
+              "source": "${ .trigger.data.source }",
+              "user_email": "${ .trigger.data.user_email }",
+              "user_id": "${ .trigger.data.user_id }",
+              "count": "${ .trigger.data.count }",
+              "created_at": "${ .trigger.data.created_at }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Analizar evento",
+            "description": "Auditor\u00eda y bloqueo"
+          }
+        }
+      }
+    ]
+  }
+}

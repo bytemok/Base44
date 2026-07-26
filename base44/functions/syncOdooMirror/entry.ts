@@ -1,6 +1,7 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { requireAdmin } from "../../shared/authGuards.ts";
 import { logSecurityEvent } from "../../shared/securityAudit.ts";
+import { getSyncLock } from "../../shared/syncLock.ts";
 
 const DEFAULT_RESOURCES = [
   "ventas",
@@ -18,6 +19,8 @@ Deno.serve(async (req) => {
     const auth = await requireAdmin(base44);
     if (auth.response) return auth.response;
     const user = auth.user;
+    const lock = await getSyncLock(base44);
+    if (lock.locked) return Response.json({ ok: false, blocked: true, blocked_until: lock.blocked_until, reason: lock.reason });
     const body = await req.json().catch(() => ({}));
     const resources = Array.isArray(body.resources) && body.resources.length ? body.resources : DEFAULT_RESOURCES;
 

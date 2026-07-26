@@ -1,0 +1,45 @@
+{
+  "name": "Planificar Rutas Diarias",
+  "description": "Cada d\u00eda a las 7:00 AM organiza pedidos pendientes por zona y crea hojas de ruta.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "schedule_mode": "recurring",
+      "cron_expression": "0 7 * * *",
+      "timezone": "America/Buenos_Aires",
+      "events": [],
+      "one_time_date": null,
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "planificar_rutas_diarias",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "crear_hojas_ruta": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "planificarRutasDiarias",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Crear hojas de ruta",
+            "description": "Por zona"
+          }
+        }
+      }
+    ]
+  }
+}

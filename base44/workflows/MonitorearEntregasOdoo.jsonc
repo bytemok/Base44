@@ -1,0 +1,45 @@
+{
+  "name": "Monitorear Entregas de Odoo",
+  "description": "Revisa peri\u00f3dicamente Odoo, marca entregas completadas en la app y activa la encuesta post entrega.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "schedule_mode": "recurring",
+      "cron_expression": "*/15 * * * *",
+      "timezone": "America/Buenos_Aires",
+      "events": [],
+      "one_time_date": null,
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "monitorear_entregas_odoo",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "actualizar_entregas": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sincronizarEntregasCompletadas",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Actualizar entregas",
+            "description": "Odoo completadas"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "Encuesta Post Entrega",
+  "description": "Cuando una entrega queda completada, espera 2 horas, notifica por la app y crea el registro de satisfacci\u00f3n.",
+  "trigger": {
+    "condition": "${ (.trigger.data.estado == \"Entregada\" or .trigger.data.estado == \"Completado\" or .trigger.data.estado == \"Completada\") and (.trigger.old_data.estado != .trigger.data.estado) }",
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "EntregaProgramada",
+      "events": [
+        "update"
+      ]
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "encuesta_post_entrega",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "esperar_dos_horas": {
+          "wait": "PT2H",
+          "then": "crear_encuesta",
+          "x-base44": {
+            "title": "Esperar 2 horas",
+            "description": "Post entrega"
+          }
+        }
+      },
+      {
+        "crear_encuesta": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "notificarEncuestaEntrega",
+            "args": {
+              "delivery_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Crear encuesta",
+            "description": "Notificar cliente"
+          }
+        }
+      }
+    ]
+  }
+}

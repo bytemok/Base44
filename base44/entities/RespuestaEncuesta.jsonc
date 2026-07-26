@@ -15,12 +15,13 @@
     "nivel": {
       "type": "number",
       "enum": [
+        0,
         1,
         2,
         3,
         4
       ],
-      "description": "1=Muy satisfecho, 2=Satisfecho, 3=Poco satisfecho, 4=No satisfecho"
+      "description": "0=Pendiente, 1=Muy satisfecho, 2=Satisfecho, 3=Poco satisfecho, 4=No satisfecho"
     },
     "fecha": {
       "type": "string",
