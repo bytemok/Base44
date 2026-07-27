@@ -1,43 +1,40 @@
 {
-  "name": "Notificacion",
+  "name": "StockCriticoConfig",
   "type": "object",
   "properties": {
-    "tipo": {
-      "type": "string",
-      "enum": [
-        "despacho",
-        "entrega",
-        "estado",
-        "retraso",
-        "stock"
-      ],
-      "description": "Tipo de evento log\u00edstico"
+    "product_id": {
+      "type": "number",
+      "description": "ID del producto en Odoo"
     },
-    "titulo": {
+    "producto": {
       "type": "string"
     },
-    "mensaje": {
+    "codigo": {
       "type": "string"
     },
-    "referencia": {
-      "type": "string",
-      "description": "Clave de deduplicaci\u00f3n (evento:tipo)"
+    "nivel_minimo": {
+      "type": "number",
+      "default": 0
     },
-    "cliente": {
-      "type": "string"
+    "activo": {
+      "type": "boolean",
+      "default": true
     },
-    "pedido_ref": {
-      "type": "string"
-    },
-    "leida": {
+    "alerta_activa": {
       "type": "boolean",
       "default": false
+    },
+    "ultima_alerta_stock": {
+      "type": "number"
+    },
+    "ultima_alerta_at": {
+      "type": "string"
     }
   },
   "required": [
-    "tipo",
-    "titulo",
-    "referencia"
+    "product_id",
+    "producto",
+    "nivel_minimo"
   ],
   "rls": {
     "create": {

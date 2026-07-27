@@ -1,0 +1,45 @@
+{
+  "name": "Monitorear Stock Cr\u00edtico",
+  "description": "Revisa peri\u00f3dicamente el stock de productos con m\u00ednimo configurado y crea notificaciones internas cuando bajan del nivel cr\u00edtico.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "monitorear_stock_critico",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "revisar_stock": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "monitorearStockCritico",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Revisar stock cr\u00edtico",
+            "description": "M\u00ednimos por producto"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "America/Buenos_Aires",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

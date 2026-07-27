@@ -1,11 +1,13 @@
 import React, { useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { AlertTriangle, Package, Inbox } from "lucide-react";
+import { AlertTriangle, Package } from "lucide-react";
+import StockMinimosConfig from "@/components/erp/stock/StockMinimosConfig";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
 export default function AlertasStock() {
   const { data, meta, loading, error, reload } = useOdoo("alertas_stock");
+  const productosStock = useOdoo("control_stock");
 
   const totalFaltante = useMemo(() => (data || []).reduce((s, p) => s + (p.faltante || 0), 0), [data]);
   const valorFaltante = useMemo(() => (data || []).reduce((s, p) => s + (p.faltante || 0) * (p.precio || 0), 0), [data]);
@@ -21,6 +23,8 @@ export default function AlertasStock() {
           <AlertTriangle className="h-4 w-4" /> Actualizar
         </button>
       </div>
+
+      <StockMinimosConfig productos={productosStock.data || []} loadingProductos={productosStock.loading} />
 
       {(data || []).length > 0 && (
         <div className="grid gap-4 sm:grid-cols-3">
