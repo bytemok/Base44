@@ -1,12 +1,12 @@
 {
-  "description": "Actualiza el espejo local de datos operativos de Odoo para reducir consultas en vivo.",
+  "description": "Actualiza el espejo local de datos operativos de Odoo cada hora para mantener la informaci\u00f3n al d\u00eda.",
   "trigger": {
     "condition": null,
     "config": {
       "trigger_type": "scheduled",
       "events": [],
       "schedule_mode": "recurring",
-      "cron_expression": "*/15 7-21 * * *",
+      "cron_expression": "0 * * * *",
       "one_time_date": null,
       "timezone": "America/Buenos_Aires",
       "interval_value": null,
