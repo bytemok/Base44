@@ -15,7 +15,7 @@ export default async function(req) {
       res = await base44.functions.invoke("odoo", { resource: "entregas_calendario", force_refresh: true });
     } catch (error) {
       const detail = error.response?.data?.error || error.message || String(error);
-      return Response.json({ ok: false, source: "odoo", error: detail, scanned: 0, completed: 0, updated: [] });
+      return Response.json({ ok: false, source: "odoo", error: detail, scanned: 0, completed: 0, updated: [], failed: [] });
     }
     const rows = res.data?.data || [];
     const completed = rows.filter((r) => {
@@ -46,6 +46,6 @@ export default async function(req) {
 
     return Response.json({ ok: failed.length === 0, scanned: rows.length, completed: completed.length, updated, failed });
   } catch (error) {
-    return Response.json({ error: error.message || String(error) }, { status: 500 });
+    return Response.json({ ok: false, source: "sincronizarEntregasCompletadas", error: error.message || String(error), scanned: 0, completed: 0, updated: [], failed: [] });
   }
 }
