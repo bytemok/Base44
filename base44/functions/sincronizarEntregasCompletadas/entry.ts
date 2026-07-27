@@ -10,7 +10,13 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     if (body.dry_run) return Response.json({ ok: true, dry_run: true });
 
-    const res = await base44.functions.invoke("odoo", { resource: "entregas_calendario", force_refresh: true });
+    let res;
+    try {
+      res = await base44.functions.invoke("odoo", { resource: "entregas_calendario", force_refresh: true });
+    } catch (error) {
+      const detail = error.response?.data?.error || error.message || String(error);
+      return Response.json({ ok: false, source: "odoo", error: detail, scanned: 0, completed: 0, updated: [] });
+    }
     const rows = res.data?.data || [];
     const completed = rows.filter((r) => {
       const estado = String(r.estado || "").toLowerCase();
