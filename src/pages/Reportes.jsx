@@ -1,10 +1,11 @@
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Truck, Receipt, Boxes, BarChart3 } from "lucide-react";
+import { Truck, Receipt, Boxes, BarChart3, TrendingUp } from "lucide-react";
 import ReporteLogistica from "@/components/erp/reportes/ReporteLogistica";
 import ReporteVentas from "@/components/erp/reportes/ReporteVentas";
 import ReporteStock from "@/components/erp/reportes/ReporteStock";
 import ReporteMensualClave from "@/components/erp/reportes/ReporteMensualClave";
+import ReporteProgresoLogistico from "@/components/erp/reportes/ReporteProgresoLogistico";
 
 export default function Reportes() {
   return (
@@ -14,13 +15,15 @@ export default function Reportes() {
         <p className="mt-1 text-sm text-slate-500">Indicadores y métricas para tomar decisiones · sincronizado con Odoo</p>
       </div>
 
-      <Tabs defaultValue="mensual">
+      <Tabs defaultValue="progreso">
         <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="progreso" className="gap-1.5"><TrendingUp className="h-4 w-4" /> Progreso logístico</TabsTrigger>
           <TabsTrigger value="mensual" className="gap-1.5"><BarChart3 className="h-4 w-4" /> Métricas clave</TabsTrigger>
           <TabsTrigger value="logistica" className="gap-1.5"><Truck className="h-4 w-4" /> Logística</TabsTrigger>
           <TabsTrigger value="ventas" className="gap-1.5"><Receipt className="h-4 w-4" /> Ventas</TabsTrigger>
           <TabsTrigger value="stock" className="gap-1.5"><Boxes className="h-4 w-4" /> Stock</TabsTrigger>
         </TabsList>
+        <TabsContent value="progreso"><ReporteProgresoLogistico /></TabsContent>
         <TabsContent value="mensual"><ReporteMensualClave /></TabsContent>
         <TabsContent value="logistica"><ReporteLogistica /></TabsContent>
         <TabsContent value="ventas"><ReporteVentas /></TabsContent>
