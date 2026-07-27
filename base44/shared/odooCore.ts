@@ -60,29 +60,42 @@ export async function createOdooClient(defaultLimit = 100) {
   let AUTH_DB = ODOO_DB;
   let authMode = "jsonrpc";
   let sessionCookie = "";
+  const authAttempts = [];
+  let jsonrpcRejectedCredentials = false;
 
   for (const db of dbCandidates) {
     uid = await jsonRpc("/jsonrpc", {
       service: "common",
       method: "authenticate",
       args: [db, ODOO_USER, ODOO_KEY, {}],
-    }).catch(() => null);
+    }).catch((error) => {
+      authAttempts.push(`jsonrpc/${db}: ${error.message || String(error)}`);
+      return null;
+    });
     if (uid) {
       AUTH_DB = db;
       break;
     }
+    jsonrpcRejectedCredentials = true;
+    authAttempts.push(`jsonrpc/${db}: credenciales rechazadas`);
   }
 
-  if (!uid) {
+  if (!uid && !jsonrpcRejectedCredentials) {
     for (const db of dbCandidates) {
       const res = await fetch(ODOO_URL + "/web/session/authenticate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jsonrpc: "2.0", method: "call", params: { db, login: ODOO_USER, password: ODOO_KEY }, id: idc++ }),
-      }).catch(() => null);
+      }).catch((error) => {
+        authAttempts.push(`session/${db}: ${error.message || String(error)}`);
+        return null;
+      });
       if (!res) continue;
       const rawCookie = res.headers.get("set-cookie") || "";
-      const result = await parseOdooResponse(res).catch(() => null);
+      const result = await parseOdooResponse(res).catch((error) => {
+        authAttempts.push(`session/${db}: ${error.message || String(error)}`);
+        return null;
+      });
       if (result?.uid) {
         uid = result.uid;
         AUTH_DB = db;
@@ -90,10 +103,11 @@ export async function createOdooClient(defaultLimit = 100) {
         sessionCookie = rawCookie.split(";")[0] || "";
         break;
       }
+      authAttempts.push(`session/${db}: credenciales rechazadas`);
     }
   }
 
-  if (!uid) throw new Error("No se pudo autenticar en Odoo. Revisá base de datos, usuario y API key.");
+  if (!uid) throw new Error(`No se pudo autenticar en Odoo. Bases probadas: ${dbCandidates.join(", ") || "ninguna"}. Intentos: ${authAttempts.join(" | ") || "sin detalle"}. ${jsonrpcRejectedCredentials ? "Se omitió el login de sesión para evitar nuevos bloqueos por intentos fallidos." : ""}`);
 
   const callKw = async (model, method, args = [], kwargs = {}) => {
     const res = await fetch(`${ODOO_URL}/web/dataset/call_kw/${model}/${method}`, {
