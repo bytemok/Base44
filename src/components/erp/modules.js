@@ -5,6 +5,7 @@ export const MODULES = [
   { slug: "ventas", label: "Ventas", icon: ShoppingCart, section: "Operación", path: "/ventas" },
   { slug: "coordinar", label: "Pedidos a coordinar", icon: ClipboardList, section: "Operación", path: "/coordinar" },
   { slug: "reporte-zonas", label: "Reporte por zonas", icon: MapPinned, section: "Operación", path: "/reporte-zonas" },
+  { slug: "reporte-entregas", label: "Reporte entregas", icon: BarChart3, section: "Operación", path: "/reporte-entregas" },
   { slug: "calendario", label: "Calendario de Entregas", icon: CalendarDays, section: "Operación", path: "/calendario" },
   { slug: "recepciones", label: "Recepciones pendientes", icon: Inbox, section: "Operación", path: "/recepciones" },
   { slug: "enviados", label: "Pedidos entregados", icon: Send, section: "Operación", path: "/enviados" },
