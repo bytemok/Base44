@@ -24,16 +24,27 @@ export default async function(req) {
     });
 
     const updated = [];
+    const failed = [];
     for (const row of completed) {
-      if (!row.id) continue;
-      const current = await base44.asServiceRole.entities.EntregaProgramada.get(row.id).catch(() => null);
-      if (!current) continue;
-      if (["Entregada", "Completado", "Completada"].includes(current.estado)) continue;
-      const saved = await base44.asServiceRole.entities.EntregaProgramada.update(row.id, { estado: "Entregada" });
-      updated.push({ id: saved.id, order_ref: saved.order_ref });
+      if (!row.id) {
+        failed.push({ id: null, order_ref: row.order_ref || row.referencia || "", error: "Entrega sin id local" });
+        continue;
+      }
+      try {
+        const current = await base44.asServiceRole.entities.EntregaProgramada.get(row.id).catch(() => null);
+        if (!current) {
+          failed.push({ id: row.id, order_ref: row.order_ref || row.referencia || "", error: "Entrega local no encontrada" });
+          continue;
+        }
+        if (["Entregada", "Completado", "Completada"].includes(current.estado)) continue;
+        const saved = await base44.asServiceRole.entities.EntregaProgramada.update(row.id, { estado: "Entregada" });
+        updated.push({ id: saved.id, order_ref: saved.order_ref });
+      } catch (error) {
+        failed.push({ id: row.id, order_ref: row.order_ref || row.referencia || "", error: error.message || String(error) });
+      }
     }
 
-    return Response.json({ ok: true, scanned: rows.length, completed: completed.length, updated });
+    return Response.json({ ok: failed.length === 0, scanned: rows.length, completed: completed.length, updated, failed });
   } catch (error) {
     return Response.json({ error: error.message || String(error) }, { status: 500 });
   }
