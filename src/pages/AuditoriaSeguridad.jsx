@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ShieldCheck, Loader2 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import AuditoriaPedidos from "@/components/erp/AuditoriaPedidos";
 
 const label = {
   finanzas: "Finanzas",
@@ -45,6 +46,8 @@ export default function AuditoriaSeguridad() {
         <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"><p className="text-xs text-slate-500">Finanzas</p><p className="text-2xl font-semibold text-slate-900">{stats.finanzas}</p></div>
         <div className="rounded-2xl bg-white p-4 ring-1 ring-slate-200"><p className="text-xs text-slate-500">Clientes</p><p className="text-2xl font-semibold text-slate-900">{stats.clientes}</p></div>
       </div>
+
+      <AuditoriaPedidos rows={rows} loading={loading} />
 
       <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200">
         <div className="grid grid-cols-[150px_1fr_1fr_1fr_90px] gap-3 border-b border-slate-200 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">

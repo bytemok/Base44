@@ -2,7 +2,7 @@ import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
 import { requireAdmin } from "../../shared/authGuards.ts";
 import { createOdooClient, createZonaResolver } from "../../shared/odooCore.ts";
 import { cacheKeyFor, isCacheableResource, readCachedResource, saveCachedResource, markCacheError } from "../../shared/odooMirror.ts";
-import { logSensitiveAccess } from "../../shared/securityAudit.ts";
+import { logSecurityEvent, logSensitiveAccess } from "../../shared/securityAudit.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -738,6 +738,7 @@ Deno.serve(async (req) => {
       const fecha = body.fecha;
       if (!orderId || !fecha) return Response.json({ error: "Faltan datos" }, { status: 400 });
       await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "sale.order", "write", [[orderId], { commitment_date: fecha + " 00:00:00" }]] });
+      await logSecurityEvent(base44, user, { area: "sistema", resource: "pedido", action: "coordinar_pedido", source: "odoo", record_ref: String(orderId), count: 1, status: "ok" });
       return Response.json({ resource: "coordinar_pedido", ok: true });
     } else if (resource === "control_stock") {
       const r = await searchRead(
