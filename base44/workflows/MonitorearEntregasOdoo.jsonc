@@ -6,7 +6,7 @@
     "config": {
       "trigger_type": "scheduled",
       "schedule_mode": "recurring",
-      "cron_expression": "*/15 * * * *",
+      "cron_expression": "0 * * * *",
       "timezone": "America/Buenos_Aires",
       "events": [],
       "one_time_date": null,
