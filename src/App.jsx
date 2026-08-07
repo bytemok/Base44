@@ -36,6 +36,10 @@ import ReporteEntregas from '@/pages/ReporteEntregas';
 import Etiquetas from '@/pages/Etiquetas';
 import Perfil from '@/pages/Perfil';
 import AuditoriaSeguridad from '@/pages/AuditoriaSeguridad';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -66,6 +70,10 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Add your page Route elements here */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/etiquetas" element={<Etiquetas />} />
         <Route element={<ErpLayout />}>
