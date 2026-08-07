@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const WRITE_RESOURCES = new Set([
       "guardar_producto", "recibir_pickings", "coordinar_pedido", "control_stock_aplicar",
-      "pickings_crear", "registrar_pago_caja", "generar_orden_compra", "crear_venta",
+      "pickings_crear", "registrar_pago_caja", "generar_orden_compra", "crear_venta", "crear_cliente",
     ]);
     const ADMIN_ONLY_RESOURCES = new Set([
       "entregas_calendario",
@@ -1006,8 +1006,28 @@ Deno.serve(async (req) => {
         stock: p.qty_available || 0,
       }));
     } else if (resource === "metodos_pago") {
-      const r = await searchRead("account.journal", [["type", "in", ["cash", "bank"]]], ["id", "name", "type"], null, 20);
-      rows = r.map((j) => ({ id: j.id, nombre: j.name || "", tipo: j.type || "" }));
+      const r = await searchRead("account.journal", [["type", "in", ["cash", "bank"]]], ["id", "name", "type", "bank_account_id"], null, 20);
+      const bankIds = r.map((j) => (Array.isArray(j.bank_account_id) ? j.bank_account_id[0] : null)).filter(Boolean);
+      const cuentas = {};
+      if (bankIds.length) {
+        const bs = await searchRead("res.partner.bank", [["id", "in", bankIds]], ["id", "acc_number", "acc_holder_name"], null, 30);
+        bs.forEach((b) => (cuentas[b.id] = { cbu: b.acc_number || "", titular: b.acc_holder_name || "" }));
+      }
+      rows = r.map((j) => {
+        const bid = Array.isArray(j.bank_account_id) ? j.bank_account_id[0] : null;
+        const cta = (bid && cuentas[bid]) || {};
+        return { id: j.id, nombre: j.name || "", tipo: j.type || "", cbu: cta.cbu || "", titular: cta.titular || "" };
+      });
+    } else if (resource === "crear_cliente") {
+      const nombre = String(body.nombre || "").trim();
+      if (!nombre) return Response.json({ error: "Falta el nombre del cliente" }, { status: 400 });
+      const vals = { name: nombre, customer_rank: 1 };
+      if (body.telefono) vals.phone = String(body.telefono).trim();
+      if (body.email) vals.email = String(body.email).trim();
+      if (body.cuit) vals.vat = String(body.cuit).trim();
+      const partnerId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "res.partner", "create", [vals]] });
+      await logSecurityEvent(base44, user, { area: "ventas", resource: "cliente", action: "crear_cliente", source: "odoo", record_ref: String(partnerId), count: 1, status: "ok" });
+      return Response.json({ resource: "crear_cliente", cliente: { id: partnerId, nombre, telefono: vals.phone || "", email: vals.email || "", cuit: vals.vat || "", ref: "", ciudad: "" } });
     } else if (resource === "crear_venta") {
       const partnerId = Number(body.partner_id);
       const lineas = Array.isArray(body.lineas) ? body.lineas : [];
