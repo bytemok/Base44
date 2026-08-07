@@ -59,11 +59,8 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
     }
+    // auth_required u otros: seguimos al router, que muestra la página /login propia
   }
 
   // Render the main app
