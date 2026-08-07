@@ -69,7 +69,11 @@ export default function PuntoVenta() {
   const unidades = useMemo(() => items.reduce((s, p) => s + p.qty, 0), [items]);
   const montoRecibido = Number(recibido) || 0;
   const esEfectivo = metodoSel && (metodoSel.tipo === "cash" || /efectivo|caja/i.test(metodoSel.nombre || ""));
+  const esBanco = metodoSel && !esEfectivo && metodoSel.tipo === "bank";
   const vuelto = esEfectivo && montoRecibido > total ? montoRecibido - total : 0;
+  const qrTransferencia = esBanco && metodoSel?.cbu
+    ? `TRANSFERENCIA\nTitular: ${metodoSel.titular || metodoSel.nombre}\nCBU/Alias: ${metodoSel.cbu}\nMonto: ${fmt.format(total)}`
+    : "";
 
   useEffect(() => {
     (async () => {
@@ -302,6 +306,33 @@ export default function PuntoVenta() {
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {esBanco && (
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              {metodoSel.cbu ? (
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-sm font-medium text-slate-700">El cliente escanea el QR o transfiere a:</p>
+                  <div className="rounded-xl border border-slate-200 bg-white p-3">
+                    <QRCodeSVG value={qrTransferencia} size={180} marginSize={1} />
+                  </div>
+                  <div className="w-full rounded-xl bg-slate-50 p-3 text-center">
+                    {metodoSel.titular && <p className="text-xs text-slate-500">Titular: <span className="font-medium text-slate-700">{metodoSel.titular}</span></p>}
+                    <p className="mt-1 font-mono text-sm font-bold text-slate-900 break-all">{metodoSel.cbu}</p>
+                    <p className="mt-1 text-lg font-bold text-emerald-700">{fmt.format(total)}</p>
+                    <button onClick={() => copiarCbu(metodoSel.cbu)} className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100">
+                      {copiado ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiado ? "¡Copiado!" : "Copiar CBU/Alias"}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400">Cuando veas la transferencia acreditada, tocá Cobrar.</p>
+                </div>
+              ) : (
+                <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                  Este método no tiene CBU/alias cargado en Odoo (Contabilidad → Diarios → cuenta bancaria). Podés cobrar igual, pero sin mostrar los datos ni el QR.
+                </p>
+              )}
             </div>
           )}
 
