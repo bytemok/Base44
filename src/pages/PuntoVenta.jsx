@@ -471,8 +471,29 @@ export default function PuntoVenta() {
                   />
                 </div>
                 <EscannerCamara title="Escanear cliente" label="" onDetect={detectCliente} />
-                {partner && <button onClick={() => { setEligiendoCliente(false); setClientQuery(""); }} className="rounded-lg border border-slate-200 px-2 text-xs text-slate-500 hover:bg-slate-50">✕</button>}
+                {partner && <button onClick={() => { setEligiendoCliente(false); setClientQuery(""); setNuevoClienteOpen(false); }} className="rounded-lg border border-slate-200 px-2 text-xs text-slate-500 hover:bg-slate-50">✕</button>}
               </div>
+              <button
+                type="button"
+                onClick={() => setNuevoClienteOpen((v) => !v)}
+                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-emerald-300 bg-emerald-50/50 px-3 py-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50"
+              >
+                <UserPlus className="h-3.5 w-3.5" /> {nuevoClienteOpen ? "Cancelar" : "Crear cliente nuevo"}
+              </button>
+              {nuevoClienteOpen && (
+                <div className="mt-2 space-y-2 rounded-lg border border-emerald-100 bg-emerald-50/30 p-3">
+                  <input value={nc.nombre} onChange={(e) => setNc((v) => ({ ...v, nombre: e.target.value }))} placeholder="Nombre y apellido *" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input value={nc.telefono} onChange={(e) => setNc((v) => ({ ...v, telefono: e.target.value }))} placeholder="Teléfono" inputMode="tel" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                    <input value={nc.cuit} onChange={(e) => setNc((v) => ({ ...v, cuit: e.target.value }))} placeholder="CUIT / DNI" inputMode="numeric" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  </div>
+                  <input value={nc.email} onChange={(e) => setNc((v) => ({ ...v, email: e.target.value }))} placeholder="Email (opcional)" inputMode="email" className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-400" />
+                  <button type="button" onClick={crearCliente} disabled={creandoCliente || !nc.nombre.trim()} className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-40">
+                    {creandoCliente ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                    Guardar cliente en Odoo
+                  </button>
+                </div>
+              )}
               <div className="mt-2 max-h-48 divide-y divide-slate-100 overflow-auto rounded-lg border border-slate-100">
                 {clientesFiltrados.length === 0 ? (
                   <p className="px-3 py-2 text-xs text-slate-400">Sin coincidencias</p>
