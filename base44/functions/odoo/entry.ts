@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
 
     const WRITE_RESOURCES = new Set([
       "guardar_producto", "recibir_pickings", "coordinar_pedido", "control_stock_aplicar",
-      "pickings_crear", "registrar_pago_caja", "generar_orden_compra",
+      "pickings_crear", "registrar_pago_caja", "generar_orden_compra", "crear_venta",
     ]);
     const ADMIN_ONLY_RESOURCES = new Set([
       "entregas_calendario",
@@ -987,6 +987,52 @@ Deno.serve(async (req) => {
       }
       const [po] = await searchRead("purchase.order", [["id", "=", poId]], ["name", "amount_total"], null, 1);
       return Response.json({ resource: "generar_orden_compra", order_id: poId, name: po?.name || "", total: po?.amount_total || 0, odoo_url: ODOO_URL });
+    } else if (resource === "buscar_producto") {
+      const codigo = String(body.codigo || "").trim();
+      if (!codigo) return Response.json({ error: "Falta codigo" }, { status: 400 });
+      const r = await searchRead(
+        "product.product",
+        ["&", ["active", "=", true], "|", ["barcode", "=", codigo], ["default_code", "=", codigo]],
+        ["id", "name", "default_code", "barcode", "lst_price", "qty_available"],
+        null,
+        5
+      );
+      rows = r.map((p) => ({
+        product_id: p.id,
+        nombre: p.name || "",
+        codigo: p.default_code || "",
+        barcode: p.barcode || "",
+        precio: p.lst_price || 0,
+        stock: p.qty_available || 0,
+      }));
+    } else if (resource === "crear_venta") {
+      const partnerId = Number(body.partner_id);
+      const lineas = Array.isArray(body.lineas) ? body.lineas : [];
+      if (!partnerId || !lineas.length) return Response.json({ error: "Faltan datos: cliente y al menos una línea" }, { status: 400 });
+      const orderLines = [];
+      for (const ln of lineas) {
+        const prodId = Number(ln.product_id);
+        const qty = Number(ln.qty);
+        if (!prodId || !qty || qty <= 0) continue;
+        const line = { product_id: prodId, product_uom_qty: qty };
+        if (ln.precio !== undefined && ln.precio !== null && ln.precio !== "" && !Number.isNaN(Number(ln.precio))) line.price_unit = Number(ln.precio);
+        orderLines.push([0, 0, line]);
+      }
+      if (!orderLines.length) return Response.json({ error: "Sin líneas válidas" }, { status: 400 });
+      const orderVals = { partner_id: partnerId, order_line: orderLines };
+      if (body.nota) orderVals.note = String(body.nota);
+      const orderId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "sale.order", "create", [orderVals]] });
+      let confirmError = "";
+      if (body.confirmar) {
+        try {
+          await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "sale.order", "action_confirm", [[orderId]]] });
+        } catch (e) {
+          confirmError = e?.message || String(e);
+        }
+      }
+      const [o] = await searchRead("sale.order", [["id", "=", orderId]], ["name", "amount_total", "state"], null, 1);
+      await logSecurityEvent(base44, user, { area: "ventas", resource: "venta", action: "crear_venta", source: "odoo", record_ref: o?.name || String(orderId), count: orderLines.length, status: "ok" });
+      return Response.json({ resource: "crear_venta", order_id: orderId, name: o?.name || "", total: o?.amount_total || 0, estado: o?.state || "", confirm_error: confirmError, odoo_url: ODOO_URL });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }
