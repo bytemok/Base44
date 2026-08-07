@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Search, RefreshCw, Inbox, Download } from "lucide-react";
+import { useSearchParams, Link } from "react-router-dom";
+import { Search, RefreshCw, Inbox, Download, ScanLine } from "lucide-react";
 import { useOdoo } from "@/hooks/useOdoo";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { estadoDe } from "@/components/erp/ventas/VentasTable";
@@ -72,6 +72,10 @@ export default function Ventas() {
           <p className="mt-1 text-sm text-slate-500">Órdenes confirmadas · Odoo</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link to="/punto-venta" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700" title="Crear una venta escaneando códigos de barras">
+            <ScanLine className="h-4 w-4" />
+            <span className="hidden sm:inline">Punto de Venta</span>
+          </Link>
           <div className="relative flex-1 sm:flex-none">
             <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
