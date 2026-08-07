@@ -11,6 +11,7 @@ import ScrollToTop from './components/ScrollToTop';
 import Pedidos from '@/pages/Pedidos';
 import Dashboard from '@/pages/Dashboard';
 import Ventas from '@/pages/Ventas';
+import PuntoVenta from '@/pages/PuntoVenta';
 import Clientes from '@/pages/Clientes';
 import Productos from '@/pages/Productos';
 import PedidosCoordinar from '@/pages/PedidosCoordinar';
@@ -71,6 +72,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/pedidos" element={<Pedidos />} />
           <Route path="/ventas" element={<Ventas />} />
+          <Route path="/punto-venta" element={<PuntoVenta />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/productos" element={<Productos />} />
           <Route path="/coordinar" element={<PedidosCoordinar />} />
