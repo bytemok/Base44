@@ -1005,6 +1005,9 @@ Deno.serve(async (req) => {
         precio: p.lst_price || 0,
         stock: p.qty_available || 0,
       }));
+    } else if (resource === "metodos_pago") {
+      const r = await searchRead("account.journal", [["type", "in", ["cash", "bank"]]], ["id", "name", "type"], null, 20);
+      rows = r.map((j) => ({ id: j.id, nombre: j.name || "", tipo: j.type || "" }));
     } else if (resource === "crear_venta") {
       const partnerId = Number(body.partner_id);
       const lineas = Array.isArray(body.lineas) ? body.lineas : [];
@@ -1031,8 +1034,35 @@ Deno.serve(async (req) => {
         }
       }
       const [o] = await searchRead("sale.order", [["id", "=", orderId]], ["name", "amount_total", "state"], null, 1);
+      // Cobro opcional: registra un pago de cliente en el diario elegido (efectivo, banco, etc.)
+      let pagoId = null;
+      let pagoError = "";
+      const pago = body.pago;
+      if (pago && Number(pago.amount) > 0) {
+        try {
+          const journalId = Number(pago.journal_id);
+          if (!journalId) throw new Error("Falta el método de pago");
+          const [journal] = await searchRead("account.journal", [["id", "=", journalId]], ["id", "name", "inbound_payment_method_line_ids"], null, 1);
+          if (!journal) throw new Error("Método de pago no encontrado en Odoo");
+          const vals = {
+            payment_type: "inbound",
+            partner_type: "customer",
+            partner_id: partnerId,
+            journal_id: journal.id,
+            amount: Number(pago.amount),
+            date: new Date().toISOString().slice(0, 10),
+            ref: o?.name ? `POS ${o.name}` : `POS ${orderId}`,
+          };
+          const pml = Array.isArray(journal.inbound_payment_method_line_ids) && journal.inbound_payment_method_line_ids.length ? journal.inbound_payment_method_line_ids[0] : null;
+          if (pml) vals.payment_method_line_id = pml;
+          pagoId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "create", [vals]] });
+          await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[pagoId]]] });
+        } catch (e) {
+          pagoError = e?.message || String(e);
+        }
+      }
       await logSecurityEvent(base44, user, { area: "ventas", resource: "venta", action: "crear_venta", source: "odoo", record_ref: o?.name || String(orderId), count: orderLines.length, status: "ok" });
-      return Response.json({ resource: "crear_venta", order_id: orderId, name: o?.name || "", total: o?.amount_total || 0, estado: o?.state || "", confirm_error: confirmError, odoo_url: ODOO_URL });
+      return Response.json({ resource: "crear_venta", order_id: orderId, name: o?.name || "", total: o?.amount_total || 0, estado: o?.state || "", confirm_error: confirmError, pago_id: pagoId, pago_error: pagoError, pago_metodo: pago?.metodo || "", odoo_url: ODOO_URL });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }
