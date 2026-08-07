@@ -4,7 +4,9 @@ import { invalidateOdoo } from "@/hooks/useOdoo";
 import {
   ScanLine, Search, Plus, Minus, Loader2, CheckCircle2, User, X,
   ShoppingCart, Trash2, Package, Banknote, Landmark, CreditCard, ArrowLeft,
+  UserPlus, Copy, Check,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import EscannerCamara from "@/components/erp/EscannerCamara";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
@@ -24,6 +26,10 @@ export default function PuntoVenta() {
   const [partner, setPartner] = useState(null);
   const [eligiendoCliente, setEligiendoCliente] = useState(false);
   const [clientQuery, setClientQuery] = useState("");
+  const [nuevoClienteOpen, setNuevoClienteOpen] = useState(false);
+  const [nc, setNc] = useState({ nombre: "", telefono: "", cuit: "", email: "" });
+  const [creandoCliente, setCreandoCliente] = useState(false);
+  const [copiado, setCopiado] = useState(false);
   const [carrito, setCarrito] = useState({}); // product_id -> {product_id, nombre, codigo, barcode, qty, precio, atributos}
   const [prodInput, setProdInput] = useState("");
   const [buscandoCodigo, setBuscandoCodigo] = useState(false);
@@ -143,6 +149,32 @@ export default function PuntoVenta() {
     const match = clientes.find((c) => (c.ref && c.ref === code) || (c.cuit && c.cuit === code));
     if (match) { setPartner(match); setClientQuery(""); setEligiendoCliente(false); setError(null); }
     else { setClientQuery(code); setError(`Cliente no encontrado: ${code}`); }
+  };
+
+  const crearCliente = async () => {
+    if (!nc.nombre.trim()) { setError("El nombre del cliente es obligatorio"); return; }
+    setCreandoCliente(true);
+    setError(null);
+    try {
+      const res = await base44.functions.invoke("odoo", { resource: "crear_cliente", ...nc });
+      const cli = res.data?.cliente;
+      if (cli) {
+        setClientes((cs) => [cli, ...cs]);
+        setPartner(cli);
+        setEligiendoCliente(false);
+        setNuevoClienteOpen(false);
+        setNc({ nombre: "", telefono: "", cuit: "", email: "" });
+        setClientQuery("");
+      }
+    } catch (e) {
+      setError(e?.response?.data?.error || e?.message || "Error al crear el cliente");
+    } finally {
+      setCreandoCliente(false);
+    }
+  };
+
+  const copiarCbu = async (texto) => {
+    try { await navigator.clipboard.writeText(texto); setCopiado(true); setTimeout(() => setCopiado(false), 1500); } catch (_) {}
   };
 
   const irACobro = () => {
