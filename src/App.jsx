@@ -40,8 +40,10 @@ import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import VendedorPanel from '@/pages/VendedorPanel';
 import ErpLayout from '@/components/erp/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import VendedorRouteGuard from '@/components/erp/VendedorRouteGuard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -72,9 +74,14 @@ const AuthenticatedApp = () => {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
-        <Route path="/etiquetas" element={<Etiquetas />} />
-        <Route element={<ErpLayout />}>
-          <Route path="/" element={<Dashboard />} />
+        <Route element={<VendedorRouteGuard />}>
+          <Route path="/etiquetas" element={<Etiquetas />} />
+          <Route element={<ErpLayout />}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/vendedor" element={<VendedorPanel />} />
+            <Route path="/vendedor/nueva-venta" element={<VendedorPanel />} />
+            <Route path="/vendedor/stock" element={<VendedorPanel />} />
+            <Route path="/vendedor/senas" element={<VendedorPanel />} />
           <Route path="/pedidos" element={<Pedidos />} />
           <Route path="/ventas" element={<Ventas />} />
           <Route path="/punto-venta" element={<PuntoVenta />} />
@@ -98,9 +105,10 @@ const AuthenticatedApp = () => {
           <Route path="/reportes" element={<Reportes />} />
           <Route path="/reporte-zonas" element={<ReporteZonas />} />
           <Route path="/reporte-entregas" element={<ReporteEntregas />} />
-          <Route path="/compras" element={<Compras />} />
-          <Route path="/hojas-ruta" element={<HojasRuta />} />
-          <Route path="/perfil" element={<Perfil />} />
+            <Route path="/compras" element={<Compras />} />
+            <Route path="/hojas-ruta" element={<HojasRuta />} />
+            <Route path="/perfil" element={<Perfil />} />
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<PageNotFound />} />

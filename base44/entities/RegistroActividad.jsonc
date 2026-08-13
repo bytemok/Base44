@@ -1,0 +1,45 @@
+{
+  "type": "object",
+  "properties": {
+    "usuario": {
+      "type": "string",
+      "title": "Usuario",
+      "description": "Email del usuario"
+    },
+    "accion": {
+      "type": "string",
+      "title": "Acci\u00f3n",
+      "enum": [
+        "Login",
+        "Logout",
+        "Crear Registro",
+        "Editar Registro",
+        "Eliminar Registro",
+        "Cambio de Permisos",
+        "Creaci\u00f3n de Usuario"
+      ],
+      "description": "Tipo de acci\u00f3n realizada"
+    },
+    "detalles": {
+      "type": "string",
+      "title": "Detalles",
+      "description": "Informaci\u00f3n adicional sobre la acci\u00f3n"
+    },
+    "fecha": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Fecha y Hora"
+    },
+    "ip_address": {
+      "type": "string",
+      "title": "Direcci\u00f3n IP",
+      "description": "IP desde la que se realiz\u00f3 la acci\u00f3n"
+    }
+  },
+  "required": [
+    "usuario",
+    "accion",
+    "fecha"
+  ],
+  "name": "RegistroActividad"
+}

@@ -1,6 +1,8 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LayoutGrid, ClipboardList, ArrowLeftRight, Settings } from "lucide-react";
+import { useAuth } from "@/lib/AuthContext";
+import { VENDEDOR_MODULES } from "./modules";
 
 const TABS = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
@@ -12,6 +14,10 @@ const TABS = [
 export default function BottomTabBar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const tabs = String(user?.role || "").toLowerCase() === "vendedor"
+    ? VENDEDOR_MODULES.map((m) => ({ to: m.path, label: m.label, icon: m.icon }))
+    : TABS;
   const isActive = (to) => location.pathname === to || (to !== "/" && location.pathname.startsWith(to));
   const handleClick = (e, to) => {
     e.preventDefault();
@@ -27,7 +33,7 @@ export default function BottomTabBar() {
   };
   return (
     <nav className="pb-[env(safe-area-inset-bottom)] fixed inset-x-0 bottom-0 z-30 flex items-stretch justify-around border-t border-slate-200 bg-white/95 backdrop-blur md:hidden">
-      {TABS.map((t) => {
+      {tabs.map((t) => {
         const Icon = t.icon;
         const active = isActive(t.to);
         return (

@@ -1,0 +1,120 @@
+{
+  "name": "VendedorVenta",
+  "type": "object",
+  "properties": {
+    "odoo_order_id": {
+      "type": "number"
+    },
+    "order_ref": {
+      "type": "string"
+    },
+    "cliente_id": {
+      "type": "number"
+    },
+    "cliente_nombre": {
+      "type": "string"
+    },
+    "cliente_telefono": {
+      "type": "string"
+    },
+    "cliente_email": {
+      "type": "string"
+    },
+    "items": {
+      "type": "string",
+      "description": "JSON de productos, cantidades y precios de venta"
+    },
+    "total": {
+      "type": "number",
+      "default": 0
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "Borrador",
+        "Confirmada",
+        "Se\u00f1ada",
+        "Cancelada"
+      ],
+      "default": "Confirmada"
+    },
+    "notas": {
+      "type": "string"
+    },
+    "direccion_entrega": {
+      "type": "string"
+    },
+    "sena_monto": {
+      "type": "number",
+      "default": 0
+    },
+    "sena_metodo": {
+      "type": "string"
+    },
+    "sena_operacion": {
+      "type": "string"
+    },
+    "sena_payment_id": {
+      "type": "number"
+    },
+    "fecha": {
+      "type": "string",
+      "format": "date"
+    },
+    "vendedor_email": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "order_ref",
+    "cliente_nombre",
+    "items",
+    "total",
+    "fecha"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "vendedor"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

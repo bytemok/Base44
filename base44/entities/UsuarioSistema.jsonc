@@ -1,0 +1,83 @@
+{
+  "type": "object",
+  "properties": {
+    "nombre_completo": {
+      "type": "string",
+      "title": "Nombre Completo",
+      "description": "Nombre del usuario"
+    },
+    "email": {
+      "type": "string",
+      "title": "Email",
+      "description": "Email \u00fanico del usuario"
+    },
+    "rol": {
+      "type": "string",
+      "title": "Rol",
+      "enum": [
+        "Admin",
+        "Editor",
+        "Viewer",
+        "Vendedor",
+        "Personalizado"
+      ],
+      "description": "Rol del usuario"
+    },
+    "rol_personalizado": {
+      "type": "string",
+      "title": "Rol Personalizado",
+      "description": "Nombre del rol si selecciona Personalizado"
+    },
+    "contrasena": {
+      "type": "string",
+      "title": "Contrase\u00f1a",
+      "description": "Contrase\u00f1a encriptada (solo lectura para seguridad)"
+    },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "Activo",
+        "Inactivo",
+        "Suspendido"
+      ],
+      "title": "Estado",
+      "default": "Activo"
+    },
+    "permisos_especiales": {
+      "type": "string",
+      "title": "Permisos Especiales (JSON)",
+      "description": "Permisos espec\u00edficos adicionales en formato JSON"
+    },
+    "puede_ver_stock": {
+      "type": "boolean",
+      "title": "Puede Ver Stock",
+      "default": false
+    },
+    "puede_crear_ventas": {
+      "type": "boolean",
+      "title": "Puede Crear Ventas",
+      "default": false
+    },
+    "puede_editar_usuarios": {
+      "type": "boolean",
+      "title": "Puede Editar Usuarios",
+      "default": false
+    },
+    "fecha_creacion": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Fecha de Creaci\u00f3n"
+    },
+    "fecha_ultima_login": {
+      "type": "string",
+      "format": "date-time",
+      "title": "\u00daltimo Login"
+    }
+  },
+  "required": [
+    "nombre_completo",
+    "email",
+    "rol"
+  ],
+  "name": "UsuarioSistema"
+}

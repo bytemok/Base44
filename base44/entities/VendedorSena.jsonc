@@ -1,0 +1,80 @@
+{
+  "name": "VendedorSena",
+  "type": "object",
+  "properties": {
+    "odoo_order_id": {
+      "type": "number"
+    },
+    "order_ref": {
+      "type": "string"
+    },
+    "cliente_nombre": {
+      "type": "string"
+    },
+    "monto": {
+      "type": "number"
+    },
+    "metodo": {
+      "type": "string"
+    },
+    "numero_operacion": {
+      "type": "string"
+    },
+    "payment_id": {
+      "type": "number"
+    },
+    "fecha": {
+      "type": "string",
+      "format": "date"
+    },
+    "vendedor_email": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "odoo_order_id",
+    "order_ref",
+    "monto",
+    "metodo",
+    "numero_operacion",
+    "fecha"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "vendedor"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

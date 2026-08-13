@@ -1,5 +1,5 @@
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { requireAdmin } from "../../shared/authGuards.ts";
+import { requireAuthenticated } from "../../shared/authGuards.ts";
 import { createOdooClient, createZonaResolver } from "../../shared/odooCore.ts";
 import { cacheKeyFor, isCacheableResource, readCachedResource, saveCachedResource, markCacheError } from "../../shared/odooMirror.ts";
 import { logSecurityEvent, logSensitiveAccess } from "../../shared/securityAudit.ts";
@@ -7,7 +7,7 @@ import { logSecurityEvent, logSensitiveAccess } from "../../shared/securityAudit
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const auth = await requireAdmin(base44);
+    const auth = await requireAuthenticated(base44);
     if (auth.response) return auth.response;
     const user = auth.user;
 
@@ -26,12 +26,19 @@ Deno.serve(async (req) => {
 
     const WRITE_RESOURCES = new Set([
       "guardar_producto", "recibir_pickings", "coordinar_pedido", "control_stock_aplicar",
-      "pickings_crear", "registrar_pago_caja", "generar_orden_compra", "crear_venta", "crear_cliente",
+      "pickings_crear", "registrar_pago_caja", "generar_orden_compra", "crear_venta", "crear_cliente", "registrar_sena",
     ]);
     const ADMIN_ONLY_RESOURCES = new Set([
       "entregas_calendario",
     ]);
-    if ((WRITE_RESOURCES.has(resource) || ADMIN_ONLY_RESOURCES.has(resource)) && user.role !== "admin") {
+    const VENDEDOR_RESOURCES = new Set([
+      "clientes", "control_stock", "metodos_pago", "buscar_producto", "ventas", "crear_cliente", "crear_venta", "registrar_sena",
+    ]);
+    const isVendedor = user.role === "vendedor";
+    if (isVendedor && !VENDEDOR_RESOURCES.has(resource)) {
+      return Response.json({ error: "Forbidden: rol vendedor sin acceso a este módulo" }, { status: 403 });
+    }
+    if ((WRITE_RESOURCES.has(resource) || ADMIN_ONLY_RESOURCES.has(resource)) && user.role !== "admin" && !(isVendedor && VENDEDOR_RESOURCES.has(resource))) {
       return Response.json({ error: "Forbidden: se requiere rol admin" }, { status: 403 });
     }
 
@@ -491,6 +498,7 @@ Deno.serve(async (req) => {
             productos,
           };
         });
+      if (isVendedor) rows = rows.map(({ invoice_ids, adeudado, ...r }) => r);
       extra.odoo_url = ODOO_URL;
     } else if (resource === "detalle") {
       const orderId = Number(body.order_id);
@@ -1071,7 +1079,7 @@ Deno.serve(async (req) => {
             journal_id: journal.id,
             amount: Number(pago.amount),
             date: new Date().toISOString().slice(0, 10),
-            ref: o?.name ? `POS ${o.name}` : `POS ${orderId}`,
+            ref: pago.operacion ? `Seña ${o?.name || orderId} - Op ${pago.operacion}` : (o?.name ? `POS ${o.name}` : `POS ${orderId}`),
           };
           const pml = Array.isArray(journal.inbound_payment_method_line_ids) && journal.inbound_payment_method_line_ids.length ? journal.inbound_payment_method_line_ids[0] : null;
           if (pml) vals.payment_method_line_id = pml;
@@ -1083,6 +1091,25 @@ Deno.serve(async (req) => {
       }
       await logSecurityEvent(base44, user, { area: "ventas", resource: "venta", action: "crear_venta", source: "odoo", record_ref: o?.name || String(orderId), count: orderLines.length, status: "ok" });
       return Response.json({ resource: "crear_venta", order_id: orderId, name: o?.name || "", total: o?.amount_total || 0, estado: o?.state || "", confirm_error: confirmError, pago_id: pagoId, pago_error: pagoError, pago_metodo: pago?.metodo || "", odoo_url: ODOO_URL });
+    } else if (resource === "registrar_sena") {
+      const orderId = Number(body.order_id);
+      const amount = Number(body.amount);
+      const journalId = Number(body.journal_id);
+      const operacion = String(body.operacion || "").trim();
+      if (!orderId || !amount || amount <= 0 || !journalId || !operacion) return Response.json({ error: "Faltan datos de la seña" }, { status: 400 });
+      const [order] = await searchRead("sale.order", [["id", "=", orderId]], ["id", "name", "partner_id"], null, 1);
+      if (!order) return Response.json({ error: "Venta no encontrada" }, { status: 404 });
+      const partnerId = Array.isArray(order.partner_id) ? order.partner_id[0] : null;
+      if (!partnerId) return Response.json({ error: "La venta no tiene cliente válido" }, { status: 400 });
+      const [journal] = await searchRead("account.journal", [["id", "=", journalId]], ["id", "name", "inbound_payment_method_line_ids"], null, 1);
+      if (!journal) return Response.json({ error: "Método de pago no encontrado" }, { status: 400 });
+      const vals = { payment_type: "inbound", partner_type: "customer", partner_id: partnerId, journal_id: journal.id, amount, date: new Date().toISOString().slice(0, 10), ref: `Seña ${order.name} - Op ${operacion}` };
+      const pml = Array.isArray(journal.inbound_payment_method_line_ids) && journal.inbound_payment_method_line_ids.length ? journal.inbound_payment_method_line_ids[0] : null;
+      if (pml) vals.payment_method_line_id = pml;
+      const paymentId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "create", [vals]] });
+      await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[paymentId]]] });
+      await logSecurityEvent(base44, user, { area: "ventas", resource: "sena", action: "registrar_sena", source: "odoo", record_ref: order.name, count: 1, status: "ok" });
+      return Response.json({ resource: "registrar_sena", payment_id: paymentId, order_ref: order.name, amount });
     } else {
       return Response.json({ error: "Recurso no soportado: " + resource }, { status: 400 });
     }

@@ -29,7 +29,15 @@ export const MODULES = [
   { slug: "perfil", label: "Perfil", icon: Settings, section: "Sistema", path: "/perfil" },
 ];
 
+export const VENDEDOR_MODULES = [
+  { slug: "vendedor-inicio", label: "Inicio", icon: LayoutDashboard, section: "Vendedor", path: "/vendedor" },
+  { slug: "vendedor-nueva-venta", label: "Nueva Venta", icon: ShoppingCart, section: "Vendedor", path: "/vendedor/nueva-venta" },
+  { slug: "vendedor-stock", label: "Stock", icon: PackageCheck, section: "Vendedor", path: "/vendedor/stock" },
+  { slug: "vendedor-senas", label: "Registrar Seña", icon: Receipt, section: "Vendedor", path: "/vendedor/senas" },
+];
+
 export const SECTIONS = ["Operación", "Catálogo", "Finanzas", "Sistema"];
+export const VENDEDOR_SECTIONS = ["Vendedor"];
 
 export const getModuleByPath = (pathname) =>
   MODULES.find((m) => m.path === pathname) ||

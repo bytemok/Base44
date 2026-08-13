@@ -1,10 +1,15 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Package, X } from "lucide-react";
-import { MODULES, SECTIONS } from "./modules";
+import { useAuth } from "@/lib/AuthContext";
+import { MODULES, SECTIONS, VENDEDOR_MODULES, VENDEDOR_SECTIONS } from "./modules";
 
 export default function Sidebar({ open, onClose }) {
   const location = useLocation();
+  const { user } = useAuth();
+  const isVendedor = String(user?.role || "").toLowerCase() === "vendedor";
+  const modules = isVendedor ? VENDEDOR_MODULES : MODULES;
+  const sections = isVendedor ? VENDEDOR_SECTIONS : SECTIONS;
   const isActive = (path) =>
     location.pathname === path || (path !== "/" && location.pathname.startsWith(path));
 
@@ -17,7 +22,7 @@ export default function Sidebar({ open, onClose }) {
         }`}
       >
         <Link
-          to="/"
+          to={isVendedor ? "/vendedor" : "/"}
           onClick={onClose}
           className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white"
         >
@@ -31,9 +36,9 @@ export default function Sidebar({ open, onClose }) {
         </button>
 
         <nav className="flex-1 w-full overflow-y-auto">
-          {SECTIONS.map((section, si) => (
+          {sections.map((section, si) => (
             <div key={section} className={si === 0 ? "" : "mt-3 border-t border-white/5 pt-3"}>
-              {MODULES.filter((m) => m.section === section).map((m) => {
+              {modules.filter((m) => m.section === section).map((m) => {
                 const Icon = m.icon;
                 const active = isActive(m.path);
                 return (

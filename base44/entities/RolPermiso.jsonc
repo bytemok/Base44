@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "nombre_rol": {
+      "type": "string",
+      "title": "Nombre del Rol",
+      "description": "Ej: Admin, Editor, Viewer, Vendedor"
+    },
+    "descripcion": {
+      "type": "string",
+      "title": "Descripci\u00f3n"
+    },
+    "permisos": {
+      "type": "string",
+      "title": "Permisos (JSON)",
+      "description": "JSON con permisos: {crear: true, editar: true, eliminar: true, leer: true, ver_stock: true}"
+    },
+    "activo": {
+      "type": "boolean",
+      "title": "Activo",
+      "default": true
+    },
+    "fecha_creacion": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Fecha de Creaci\u00f3n"
+    }
+  },
+  "required": [
+    "nombre_rol"
+  ],
+  "name": "RolPermiso"
+}

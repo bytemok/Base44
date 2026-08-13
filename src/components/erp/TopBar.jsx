@@ -2,11 +2,14 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Puzzle, Bell, Pencil, Truck, PackageCheck, AlertTriangle } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
 import AppSwitcher from "./AppSwitcher";
 import GlobalSearch from "./GlobalSearch";
 import ProfileMenu from "./ProfileMenu";
 
 export default function TopBar() {
+  const { user } = useAuth();
+  const isVendedor = String(user?.role || "").toLowerCase() === "vendedor";
   const [notifOpen, setNotifOpen] = useState(false);
   const [noLeidas, setNoLeidas] = useState([]);
   const [vista, setVista] = useState([]);
@@ -41,20 +44,20 @@ export default function TopBar() {
 
   return (
     <header className="safe-top sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-3 sm:gap-4 sm:px-5">
-      <Link to="/" className="flex items-center gap-2">
+      <Link to={isVendedor ? "/vendedor" : "/"} className="flex items-center gap-2">
         <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-white">
           <Puzzle className="h-5 w-5" />
         </span>
         <span className="hidden text-sm font-bold text-slate-800 sm:block">IDEARMARKET B</span>
       </Link>
-      <div className="h-6 w-px bg-slate-200" />
-      <AppSwitcher />
+      {!isVendedor && <div className="h-6 w-px bg-slate-200" />}
+      {!isVendedor && <AppSwitcher />}
       <div className="flex-1" />
-      <GlobalSearch />
-      <Link to="/perfil" className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100">
+      {!isVendedor && <GlobalSearch />}
+      {!isVendedor && <Link to="/perfil" className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-slate-600 hover:bg-slate-100">
         <Pencil className="h-4 w-4" /> <span className="hidden lg:block">Soporte</span>
-      </Link>
-      <div className="relative">
+      </Link>}
+      {!isVendedor && <div className="relative">
         <button onClick={toggleNotif} className="relative rounded-md p-1.5 text-slate-500 hover:bg-slate-100">
           <Bell className="h-5 w-5" />
           {noLeidas.length > 0 &&
@@ -88,7 +91,7 @@ export default function TopBar() {
             </div>
           </>
         }
-      </div>
+      </div>}
       <ProfileMenu />
     </header>);
 
