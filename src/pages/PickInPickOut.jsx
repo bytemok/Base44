@@ -114,6 +114,7 @@ export default function PickInPickOut() {
   const quitar = (code) => setProductos((p) => { const n = { ...p }; delete n[code]; return n; });
 
   const validar = async () => {
+    if (resultado && !resultado.procesando) { setError("Esta operación ya fue validada y quedó bloqueada"); return; }
     if (!partner) { setError("Seleccioná un cliente"); return; }
     const lineas = Object.values(productos).map((p) => ({ product_id: p.product_id, qty: p.qty })).filter((l) => l.qty > 0);
     if (!lineas.length) { setError("Escaneá al menos un producto"); return; }
@@ -187,6 +188,7 @@ export default function PickInPickOut() {
   }
 
   const esOut = mode === "out";
+  const operacionBloqueada = !!resultado && !resultado.procesando;
 
   return (
     <div className="space-y-5">
@@ -216,9 +218,9 @@ export default function PickInPickOut() {
                 <p className="font-semibold text-slate-900">{partner.nombre}</p>
                 <p className="text-xs text-slate-500">{partner.ref && <span className="font-mono">{partner.ref}</span>}{partner.cuit && <span> · CUIT {partner.cuit}</span>}</p>
               </div>
-              <button onClick={() => { setPartner(null); setClientFocused(true); }} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-50">Cambiar</button>
+              {!operacionBloqueada && <button onClick={() => { setPartner(null); setClientFocused(true); }} className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-50">Cambiar</button>}
             </div>
-          ) : (
+          ) : !operacionBloqueada ? (
             <form onSubmit={onClientScan} className="rounded-xl border border-slate-200 bg-white p-4">
               <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
                 <ScanLine className="h-4 w-4 text-slate-400" /> Escanear código de cliente o buscar por nombre
@@ -249,10 +251,10 @@ export default function PickInPickOut() {
                 </div>
               )}
             </form>
-          )}
+          ) : null}
 
           {/* Escaneo de productos */}
-          {partner && (
+          {partner && !operacionBloqueada && (
             <form onSubmit={onProdScan} className="rounded-xl border border-slate-200 bg-white p-4">
               <label className="mb-2 flex items-center gap-2 text-sm font-medium text-slate-700">
                 <ScanLine className="h-4 w-4 text-emerald-600" /> Escanear productos
@@ -288,19 +290,23 @@ export default function PickInPickOut() {
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={() => inc(code, -1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><Minus className="h-3.5 w-3.5" /></button>
-                    <input value={p.qty} onChange={(e) => setCant(code, e.target.value)} className="w-12 rounded-lg border border-slate-200 py-1 text-center text-sm font-semibold outline-none focus:border-emerald-400" />
-                    <button onClick={() => inc(code, 1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><Plus className="h-3.5 w-3.5" /></button>
-                  </div>
-                  <button onClick={() => quitar(code)} className="text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>
+                  {operacionBloqueada ? (
+                    <span className="rounded-lg bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">{p.qty} u.</span>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button onClick={() => inc(code, -1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><Minus className="h-3.5 w-3.5" /></button>
+                      <input value={p.qty} onChange={(e) => setCant(code, e.target.value)} className="w-12 rounded-lg border border-slate-200 py-1 text-center text-sm font-semibold outline-none focus:border-emerald-400" />
+                      <button onClick={() => inc(code, 1)} className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><Plus className="h-3.5 w-3.5" /></button>
+                    </div>
+                  )}
+                  {!operacionBloqueada && <button onClick={() => quitar(code)} className="text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>}
                 </div>
               ))}
             </div>
           )}
 
           {/* Footer de acción */}
-          {partner && Object.keys(productos).length > 0 && (
+          {partner && Object.keys(productos).length > 0 && !operacionBloqueada && (
             <div className="safe-bottom sticky bottom-24 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-lg backdrop-blur md:bottom-4">
               <div className="flex-1">
                 {esOut && (
@@ -336,7 +342,7 @@ export default function PickInPickOut() {
                   {resultado.pago && (
                     <p className="mt-1">Pago registrado en Caja Deposito · {fmt.format(total)}</p>
                   )}
-                  <button onClick={reiniciar} className="mt-3 rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50">Nueva operación</button>
+                  <p className="mt-2 text-xs font-medium">Operación cerrada: no se puede modificar ni validar nuevamente.</p>
                 </>
               )}
             </div>

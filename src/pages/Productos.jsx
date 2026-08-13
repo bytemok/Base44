@@ -1,8 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Search, Package, Eye, EyeOff, Pencil, RefreshCw } from "lucide-react";
-import EditarProducto from "@/components/erp/EditarProducto";
-import { useSearchParams } from "react-router-dom";
+import { Search, Package, Eye, EyeOff, RefreshCw, Lock } from "lucide-react";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -17,12 +15,6 @@ export default function Productos() {
   const { data, loading, error, reload } = useOdoo("catalogo", 100);
   const [q, setQ] = useState("");
   const [filtro, setFiltro] = useState("todos");
-  const [searchParams, setSearchParams] = useSearchParams();
-  const editandoId = searchParams.get("editar");
-  const editando = useMemo(() => data.find((p) => String(p.product_id) === editandoId) || null, [data, editandoId]);
-  const openEditar = (p) => { const n = new URLSearchParams(searchParams); n.set("editar", String(p.product_id)); setSearchParams(n); };
-  const closeEditar = () => { const n = new URLSearchParams(searchParams); n.delete("editar"); setSearchParams(n, { replace: true }); };
-
   const filtered = useMemo(() => {
     let arr = data;
     if (filtro === "publicados") arr = arr.filter((p) => p.publicado);
@@ -88,9 +80,9 @@ export default function Productos() {
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-900">{fmt.format(p.precio)}</span>
-                  <button onClick={() => openEditar(p)} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">
-                    <Pencil className="h-3 w-3" /> Editar
-                  </button>
+                  <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-500">
+                    <Lock className="h-3 w-3" /> Bloqueado
+                  </span>
                 </div>
               </div>
             </div>
@@ -98,9 +90,6 @@ export default function Productos() {
         </div>
       )}
 
-      {editando && (
-        <EditarProducto product={editando} onClose={closeEditar} onSaved={() => { closeEditar(); reload(); }} />
-      )}
     </div>
   );
 }
