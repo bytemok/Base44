@@ -119,7 +119,7 @@ export default function Ventas() {
         </div>
       ) : (
         <>
-          <VentasTable rows={rows} onOpen={openDetalle} />
+          <VentasTable rows={rows} onOpen={openDetalle} compactDelivered={tab === "entregados"} />
           <p className="text-xs text-slate-400">{rows.length} registros · Sincronizado con Odoo</p>
         </>
       )}

@@ -14,7 +14,33 @@ export function estadoDe(r) {
   return "pendiente";
 }
 
-export default function VentasTable({ rows, onOpen }) {
+export default function VentasTable({ rows, onOpen, compactDelivered = false }) {
+  if (compactDelivered) {
+    return (
+      <div className="overflow-auto max-h-[72vh] rounded-lg border border-slate-200 bg-white">
+        <table className="w-full border-collapse text-xs">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-slate-50">
+              {["Entregado", "Orden", "Fecha creación", "Fecha entrega"].map((h) => (
+                <th key={h} className="border border-slate-200 px-2 py-1.5 text-left font-semibold text-slate-700 whitespace-nowrap">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.db_id || r.id || i} className="hover:bg-slate-50">
+                <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap"><span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700">Entregado</span></td>
+                <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap font-semibold text-slate-900">{r.id}</td>
+                <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-600">{r.fecha || "—"}</td>
+                <td className="border border-slate-200 px-2 py-1.5 whitespace-nowrap text-slate-600">{r.fecha_entrega || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-auto max-h-[72vh] rounded-lg border border-slate-200 bg-white">
       <table className="w-full border-collapse text-xs">
