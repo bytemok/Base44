@@ -2,7 +2,7 @@ import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 
-const ALLOWED = ["/vendedor", "/vendedor/nueva-venta", "/vendedor/stock", "/vendedor/senas"];
+const ALLOWED = ["/vendedor", "/ventas", "/vendedor/nueva-venta", "/vendedor/stock", "/vendedor/senas"];
 
 export default function VendedorRouteGuard() {
   const { user } = useAuth();

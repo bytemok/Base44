@@ -7,6 +7,7 @@ import { estadoDe } from "@/components/erp/ventas/VentasTable";
 import VentasTable from "@/components/erp/ventas/VentasTable";
 import DetallePedido from "@/components/erp/DetallePedido";
 import { downloadCSV } from "@/lib/csvExport";
+import { useAuth } from "@/lib/AuthContext";
 
 const TABS = [
   { id: "lista", label: "Lista para Entregar", filter: (r) => r.sin_entregar && r.listo },
@@ -26,6 +27,8 @@ const uniqueRows = (rows) => {
 
 export default function Ventas() {
   const { data, loading, error, reload } = useOdoo("ventas", undefined, { fresh: true });
+  const { user } = useAuth();
+  const isVendedor = String(user?.role || "").toLowerCase() === "vendedor";
   const [tab, setTab] = useState("pendiente");
   const [q, setQ] = useState("");
   const [sp, setSp] = useSearchParams();
@@ -121,12 +124,12 @@ export default function Ventas() {
         </div>
       ) : (
         <>
-          <VentasTable rows={rows} onOpen={openDetalle} compactDelivered={tab === "entregados"} />
+          <VentasTable rows={rows} onOpen={isVendedor ? undefined : openDetalle} compactDelivered={tab === "entregados"} showDebt={!isVendedor} />
           <p className="text-xs text-slate-400">{rows.length} registros · Sincronizado con Odoo</p>
         </>
       )}
 
-      {detalleId && <DetallePedido orderId={detalleId} onClose={closeDetalle} />}
+      {detalleId && !isVendedor && <DetallePedido orderId={detalleId} onClose={closeDetalle} />}
     </div>
   );
 }
