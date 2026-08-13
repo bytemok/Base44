@@ -66,44 +66,46 @@ export default function Ventas() {
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Ventas</h1>
-          <p className="mt-1 text-sm text-slate-500">Órdenes confirmadas · Odoo</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link to="/punto-venta" className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700" title="Crear una venta escaneando códigos de barras">
-            <ScanLine className="h-4 w-4" />
-            <span className="hidden sm:inline">Punto de Venta</span>
-          </Link>
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar pedido o cliente..."
-              className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-100 sm:w-64"
-            />
+      <div className="rounded-t-md border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-semibold text-slate-900">Órdenes de venta</h1>
+            <span className="rounded bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700 ring-1 ring-violet-200">Odoo</span>
           </div>
-          <button onClick={handleExport} disabled={loading || !data.length} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50" title="Exportar a Excel">
-            <Download className="h-4 w-4" />
-          </button>
-          <button onClick={reload} disabled={loading} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-50 disabled:opacity-50" title="Actualizar">
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link to="/punto-venta" className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-violet-700 px-3 py-2 text-sm font-medium text-white hover:bg-violet-800" title="Crear una venta escaneando códigos de barras">
+              <ScanLine className="h-4 w-4" />
+              <span className="hidden sm:inline">Nuevo</span>
+            </Link>
+            <div className="relative flex-1 sm:flex-none">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar..."
+                className="w-full rounded-md border border-slate-300 bg-white pl-8 pr-3 py-2 text-sm outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 sm:w-72"
+              />
+            </div>
+            <button onClick={handleExport} disabled={loading || !data.length} className="rounded-md border border-slate-300 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-50" title="Exportar a Excel">
+              <Download className="h-4 w-4" />
+            </button>
+            <button onClick={reload} disabled={loading} className="rounded-md border border-slate-300 p-2 text-slate-600 hover:bg-slate-50 disabled:opacity-50" title="Actualizar">
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
-      </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-200">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition ${tab === t.id ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
-          >
-            {t.label}
-          </button>
-        ))}
+        <div className="flex gap-1 overflow-x-auto px-3 pt-2">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`whitespace-nowrap rounded-t-md border-x border-t px-3 py-2 text-sm font-medium transition ${tab === t.id ? "border-slate-200 bg-white text-violet-700" : "border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"}`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error ? (
