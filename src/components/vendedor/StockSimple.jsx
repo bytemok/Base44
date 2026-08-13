@@ -15,9 +15,13 @@ export default function StockSimple() {
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
-  const filtered = useMemo(() => rows.filter((p) => (p.nombre || "").toLowerCase().includes(q.toLowerCase()) || (p.codigo || "").toLowerCase().includes(q.toLowerCase())), [rows, q]);
+  const filtered = useMemo(() => rows.filter((p) => (p.esperado || 0) > 0 && ((p.nombre || "").toLowerCase().includes(q.toLowerCase()) || (p.codigo || "").toLowerCase().includes(q.toLowerCase()))), [rows, q]);
   return (
     <div className="space-y-3">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900">Stock disponible</h1>
+        <p className="mt-1 text-sm text-slate-500">Solo productos con unidades disponibles para vender.</p>
+      </div>
       <div className="flex gap-2">
         <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar producto..." className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-brand" /></div>
         <button onClick={load} className="rounded-xl border border-slate-200 bg-white px-3 text-slate-500"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button>

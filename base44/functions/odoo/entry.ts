@@ -1026,6 +1026,7 @@ Deno.serve(async (req) => {
         const cta = (bid && cuentas[bid]) || {};
         return { id: j.id, nombre: j.name || "", tipo: j.type || "", cbu: cta.cbu || "", titular: cta.titular || "" };
       });
+      if (isVendedor) rows = rows.filter((j) => /mercado\s*pago/i.test(j.nombre || ""));
     } else if (resource === "crear_cliente") {
       const nombre = String(body.nombre || "").trim();
       if (!nombre) return Response.json({ error: "Falta el nombre del cliente" }, { status: 400 });
@@ -1051,6 +1052,7 @@ Deno.serve(async (req) => {
       }
       if (!orderLines.length) return Response.json({ error: "Sin líneas válidas" }, { status: 400 });
       const orderVals = { partner_id: partnerId, order_line: orderLines };
+      if (body.fecha) orderVals.date_order = String(body.fecha).slice(0, 10) + " 00:00:00";
       if (body.nota) orderVals.note = String(body.nota);
       const orderId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "sale.order", "create", [orderVals]] });
       let confirmError = "";
@@ -1068,23 +1070,29 @@ Deno.serve(async (req) => {
       const pago = body.pago;
       if (pago && Number(pago.amount) > 0) {
         try {
-          const journalId = Number(pago.journal_id);
-          if (!journalId) throw new Error("Falta el método de pago");
-          const [journal] = await searchRead("account.journal", [["id", "=", journalId]], ["id", "name", "inbound_payment_method_line_ids"], null, 1);
-          if (!journal) throw new Error("Método de pago no encontrado en Odoo");
+          let journal: any = null;
+          if (isVendedor) {
+            const journals = await searchRead("account.journal", [["name", "ilike", "Mercado Pago"]], ["id", "name", "inbound_payment_method_line_ids"], null, 10);
+            journal = journals.find((j) => String(j.name || "").trim().toLowerCase() === "mercado pago") || journals[0] || null;
+          } else {
+            const journalId = Number(pago.journal_id);
+            if (!journalId) throw new Error("Falta el método de pago");
+            [journal] = await searchRead("account.journal", [["id", "=", journalId]], ["id", "name", "inbound_payment_method_line_ids"], null, 1);
+          }
+          if (!journal) throw new Error("No se encontró el diario Mercado Pago en Odoo");
           const vals = {
             payment_type: "inbound",
             partner_type: "customer",
             partner_id: partnerId,
             journal_id: journal.id,
             amount: Number(pago.amount),
-            date: new Date().toISOString().slice(0, 10),
-            ref: pago.operacion ? `Seña ${o?.name || orderId} - Op ${pago.operacion}` : (o?.name ? `POS ${o.name}` : `POS ${orderId}`),
+            date: String(body.fecha || new Date().toISOString()).slice(0, 10),
+            ref: pago.operacion ? `Reserva ${o?.name || orderId} - Op ${pago.operacion}` : (o?.name ? `POS ${o.name}` : `POS ${orderId}`),
           };
           const pml = Array.isArray(journal.inbound_payment_method_line_ids) && journal.inbound_payment_method_line_ids.length ? journal.inbound_payment_method_line_ids[0] : null;
           if (pml) vals.payment_method_line_id = pml;
           pagoId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "create", [vals]] });
-          await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[pagoId]]] });
+          if (!isVendedor) await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[pagoId]]] });
         } catch (e) {
           pagoError = e?.message || String(e);
         }
@@ -1096,18 +1104,24 @@ Deno.serve(async (req) => {
       const amount = Number(body.amount);
       const journalId = Number(body.journal_id);
       const operacion = String(body.operacion || "").trim();
-      if (!orderId || !amount || amount <= 0 || !journalId || !operacion) return Response.json({ error: "Faltan datos de la seña" }, { status: 400 });
+      if (!orderId || !amount || amount <= 0 || (!journalId && !isVendedor) || !operacion) return Response.json({ error: "Faltan datos de la seña" }, { status: 400 });
       const [order] = await searchRead("sale.order", [["id", "=", orderId]], ["id", "name", "partner_id"], null, 1);
       if (!order) return Response.json({ error: "Venta no encontrada" }, { status: 404 });
       const partnerId = Array.isArray(order.partner_id) ? order.partner_id[0] : null;
       if (!partnerId) return Response.json({ error: "La venta no tiene cliente válido" }, { status: 400 });
-      const [journal] = await searchRead("account.journal", [["id", "=", journalId]], ["id", "name", "inbound_payment_method_line_ids"], null, 1);
+      let journal: any = null;
+      if (isVendedor) {
+        const journals = await searchRead("account.journal", [["name", "ilike", "Mercado Pago"]], ["id", "name", "inbound_payment_method_line_ids"], null, 10);
+        journal = journals.find((j) => String(j.name || "").trim().toLowerCase() === "mercado pago") || journals[0] || null;
+      } else {
+        [journal] = await searchRead("account.journal", [["id", "=", journalId]], ["id", "name", "inbound_payment_method_line_ids"], null, 1);
+      }
       if (!journal) return Response.json({ error: "Método de pago no encontrado" }, { status: 400 });
-      const vals = { payment_type: "inbound", partner_type: "customer", partner_id: partnerId, journal_id: journal.id, amount, date: new Date().toISOString().slice(0, 10), ref: `Seña ${order.name} - Op ${operacion}` };
+      const vals = { payment_type: "inbound", partner_type: "customer", partner_id: partnerId, journal_id: journal.id, amount, date: String(body.fecha || new Date().toISOString()).slice(0, 10), ref: `Reserva ${order.name} - Op ${operacion}` };
       const pml = Array.isArray(journal.inbound_payment_method_line_ids) && journal.inbound_payment_method_line_ids.length ? journal.inbound_payment_method_line_ids[0] : null;
       if (pml) vals.payment_method_line_id = pml;
       const paymentId = await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "create", [vals]] });
-      await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[paymentId]]] });
+      if (!isVendedor) await rpc("/jsonrpc", { service: "object", method: "execute_kw", args: [ODOO_DB, uid, ODOO_KEY, "account.payment", "action_post", [[paymentId]]] });
       await logSecurityEvent(base44, user, { area: "ventas", resource: "sena", action: "registrar_sena", source: "odoo", record_ref: order.name, count: 1, status: "ok" });
       return Response.json({ resource: "registrar_sena", payment_id: paymentId, order_ref: order.name, amount });
     } else {

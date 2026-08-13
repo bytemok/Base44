@@ -22,7 +22,7 @@ export default function Sidebar({ open, onClose }) {
         }`}
       >
         <Link
-          to={isVendedor ? "/vendedor" : "/"}
+          to={isVendedor ? "/ventas" : "/"}
           onClick={onClose}
           className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500 text-white"
         >

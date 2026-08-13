@@ -76,7 +76,7 @@ export default function Ventas() {
             <span className="rounded bg-violet-50 px-2 py-1 text-xs font-medium text-violet-700 ring-1 ring-violet-200">Odoo</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Link to="/punto-venta" className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-violet-700 px-3 py-2 text-sm font-medium text-white hover:bg-violet-800" title="Crear una venta escaneando códigos de barras">
+            <Link to={isVendedor ? "/vendedor/nueva-venta" : "/punto-venta"} className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-violet-700 px-3 py-2 text-sm font-medium text-white hover:bg-violet-800" title="Crear una venta escaneando códigos de barras">
               <ScanLine className="h-4 w-4" />
               <span className="hidden sm:inline">Nuevo</span>
             </Link>
