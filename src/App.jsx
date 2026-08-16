@@ -14,6 +14,7 @@ import Ventas from '@/pages/Ventas';
 import PuntoVenta from '@/pages/PuntoVenta';
 import Clientes from '@/pages/Clientes';
 import Productos from '@/pages/Productos';
+import CatalogoPublico from '@/pages/CatalogoPublico';
 import CatalogoPrecios from '@/pages/CatalogoPrecios';
 import PedidosCoordinar from '@/pages/PedidosCoordinar';
 import CalendarioEntregas from '@/pages/CalendarioEntregas';
@@ -70,6 +71,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Add your page Route elements here */}
+      <Route path="/catalogo" element={<CatalogoPublico />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
