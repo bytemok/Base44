@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { categories, products, searchProducts, getProductsByCategory, slugify } from "@/lib/store-data";
 import ProductCard from "@/components/store/ProductCard";
+import PublicStoreHeader from "@/components/store/PublicStoreHeader";
+import PublicStoreFooter from "@/components/store/PublicStoreFooter";
+import WhatsAppFloat from "@/components/store/WhatsAppFloat";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -90,7 +93,8 @@ export default function CatalogoPublico() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <PublicStoreHeader />
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold">{title}</h1>
           <p className="text-muted-foreground">{filtered.length} producto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}</p>
@@ -99,7 +103,7 @@ export default function CatalogoPublico() {
         <div className="mb-8 flex flex-wrap items-center gap-3 rounded-2xl border border-border/50 bg-card p-4">
           <div className="relative min-w-[200px] flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder="Buscar productos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input id="catalogo-search" placeholder="Buscar productos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -162,7 +166,9 @@ export default function CatalogoPublico() {
             <Button onClick={clearFilters}>Limpiar todos los filtros</Button>
           </div>
         )}
-      </div>
+      </main>
+      <PublicStoreFooter />
+      <WhatsAppFloat />
     </div>
   );
 }
