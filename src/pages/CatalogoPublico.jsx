@@ -1,100 +1,168 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { Heart, Loader2, Package, Search, ShieldCheck, Truck, Undo2, UserRound } from "lucide-react";
-import ProductCard from "@/components/catalogo-publico/ProductCard";
+import { categories, products, searchProducts, getProductsByCategory, slugify } from "@/lib/store-data";
+import ProductCard from "@/components/store/ProductCard";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Search, X } from "lucide-react";
+import { motion } from "framer-motion";
 
-const categorias = ["Inicio", "Catálogo", "Sillones", "Sillas", "Comedores", "Ratonas", "Living", "Combos", "IdearMarket", "Productos en stock"];
+const mapCatalogProduct = (producto) => ({
+  id: producto.id,
+  name: producto.nombre,
+  category: slugify(producto.categoria || producto.nombre),
+  categoryName: producto.categoria || "Productos",
+  price: Number(producto.precio_min || 0),
+  inStock: Number(producto.stock_total || 0) > 0,
+  stockQuantity: Number(producto.stock_total || 0),
+  rating: "4.8",
+  variants: (producto.variantes || []).map((variant) => ({
+    id: variant.id,
+    name: variant.nombre,
+    code: variant.codigo,
+    price: Number(variant.precio || producto.precio_min || 0),
+    stock: Number(variant.stock || 0),
+    attributes: variant.atributos || [],
+  })),
+});
 
 export default function CatalogoPublico() {
-  const [productos, setProductos] = useState([]);
-  const [q, setQ] = useState("");
-  const [activeCategoria, setActiveCategoria] = useState("Catálogo");
+  const urlParams = new URLSearchParams(window.location.search);
+  const initialCategory = urlParams.get("category") || "all";
+  const initialSearch = urlParams.get("search") || "";
+  const stockOnly = urlParams.get("stock") === "available";
+
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [catalog, setCatalog] = useState(products);
+  const [sortBy, setSortBy] = useState("featured");
+  const [priceRange, setPriceRange] = useState("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await base44.functions.invoke("catalogoPublico", { limit: 300 });
-        setProductos(res.data?.productos || []);
-      } catch (e) {
-        setError(e?.response?.data?.error || e?.message || "No se pudo cargar el catálogo");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    setLoading(true);
+    setError("");
+    base44.functions.invoke("catalogoPublico", { limit: 500 })
+      .then((res) => setCatalog((res.data?.productos || []).map(mapCatalogProduct)))
+      .catch((e) => setError(e?.response?.data?.error || e?.message || "No se pudo cargar el catálogo"))
+      .finally(() => setLoading(false));
   }, []);
 
-  const visibles = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    const categoriaTerm = ["Inicio", "Catálogo", "Productos en stock"].includes(activeCategoria) ? "" : activeCategoria.toLowerCase().replace(/es$/, "").replace(/s$/, "");
-    return productos.filter((p) => {
-      const texto = [p.nombre, p.categoria, ...(p.variantes || []).flatMap((v) => [v.nombre, v.codigo, ...(v.atributos || []).map((a) => `${a.atributo} ${a.valor}`)])].join(" ").toLowerCase();
-      return (!categoriaTerm || texto.includes(categoriaTerm)) && (!term || texto.includes(term));
-    });
-  }, [productos, q, activeCategoria]);
+  const categoryOptions = useMemo(() => {
+    const fromCatalog = catalog.map((product) => ({ slug: product.category, name: product.categoryName })).filter((cat) => cat.slug && cat.name);
+    const merged = [...categories, ...fromCatalog];
+    return Array.from(new Map(merged.map((cat) => [cat.slug, cat])).values());
+  }, [catalog]);
 
-  const irACatalogo = (categoria) => {
-    setActiveCategoria(categoria);
-    if (categoria === "Inicio") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
+  const filtered = useMemo(() => {
+    let result = getProductsByCategory(catalog, selectedCategory);
+    if (stockOnly) result = result.filter((product) => product.inStock && product.stockQuantity > 0);
+    result = searchProducts(result, searchQuery);
+
+    if (priceRange !== "all") {
+      const [min, max] = priceRange.split("-").map(Number);
+      result = result.filter((product) => product.price >= min && (max ? product.price <= max : true));
     }
-    setTimeout(() => document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+
+    switch (sortBy) {
+      case "price-low": result.sort((a, b) => a.price - b.price); break;
+      case "price-high": result.sort((a, b) => b.price - a.price); break;
+      case "rating": result.sort((a, b) => Number(b.rating) - Number(a.rating)); break;
+      case "newest": result.sort((a, b) => Number(b.id) - Number(a.id)); break;
+      default: break;
+    }
+
+    return result.sort((a, b) => Number(b.inStock) - Number(a.inStock));
+  }, [selectedCategory, searchQuery, sortBy, priceRange, catalog, stockOnly]);
+
+  const clearFilters = () => {
+    setSelectedCategory("all");
+    setSearchQuery("");
+    setSortBy("featured");
+    setPriceRange("all");
   };
 
+  const hasFilters = selectedCategory !== "all" || searchQuery || sortBy !== "featured" || priceRange !== "all";
+  const title = searchQuery ? `Resultados para "${searchQuery}"` : selectedCategory !== "all" ? categoryOptions.find((cat) => cat.slug === selectedCategory)?.name || "Productos en stock" : "Productos en stock";
+
   return (
-    <main className="min-h-screen bg-[#faf9f6] text-stone-950">
-      <div className="bg-black py-2 text-center text-xs font-semibold text-white">Envíos a todo el país · Fabricación artesanal · Stock inmediato</div>
-      <header className="sticky top-0 z-20 border-b border-stone-200 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-5 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-950 text-xs font-black text-white">TM</div>
-            <div className="text-[11px] font-black uppercase leading-tight tracking-[0.25em]">Todo<br />en Muebles</div>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <div className="mb-8">
+          <h1 className="mb-2 text-3xl font-bold">{title}</h1>
+          <p className="text-muted-foreground">{filtered.length} producto{filtered.length !== 1 ? "s" : ""} encontrado{filtered.length !== 1 ? "s" : ""}</p>
+        </div>
+
+        <div className="mb-8 flex flex-wrap items-center gap-3 rounded-2xl border border-border/50 bg-card p-4">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Buscar productos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
-          <nav className="hidden flex-1 items-center gap-2 overflow-x-auto text-sm text-stone-700 lg:flex">
-            {categorias.map((c) => (
-              <button key={c} onClick={() => irACatalogo(c)} className={`whitespace-nowrap rounded-full px-3 py-1.5 font-semibold transition ${activeCategoria === c ? "bg-stone-950 text-white" : "hover:bg-stone-100"}`}>
-                {c}
-              </button>
+
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Categoría" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las categorías</SelectItem>
+              {categoryOptions.map((cat) => <SelectItem key={cat.slug} value={cat.slug}>{cat.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={priceRange} onValueChange={setPriceRange}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Precio" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los precios</SelectItem>
+              <SelectItem value="0-100000">Hasta $100.000</SelectItem>
+              <SelectItem value="100000-500000">$100.000 - $500.000</SelectItem>
+              <SelectItem value="500000-900000">$500.000 - $900.000</SelectItem>
+              <SelectItem value="900000-9999999">Más de $900.000</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="Ordenar" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="featured">Destacados</SelectItem>
+              <SelectItem value="price-low">Precio: menor a mayor</SelectItem>
+              <SelectItem value="price-high">Precio: mayor a menor</SelectItem>
+              <SelectItem value="rating">Mejor valorados</SelectItem>
+              <SelectItem value="newest">Novedades</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasFilters && <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1"><X className="h-3 w-3" /> Limpiar</Button>}
+        </div>
+
+        {hasFilters && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            {selectedCategory !== "all" && <Badge variant="secondary" className="cursor-pointer gap-1 rounded-full" onClick={() => setSelectedCategory("all")}>{categoryOptions.find((cat) => cat.slug === selectedCategory)?.name}<X className="h-3 w-3" /></Badge>}
+            {searchQuery && <Badge variant="secondary" className="cursor-pointer gap-1 rounded-full" onClick={() => setSearchQuery("")}>"{searchQuery}" <X className="h-3 w-3" /></Badge>}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="py-20 text-center text-muted-foreground">Cargando catálogo...</div>
+        ) : error ? (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-5 text-sm text-destructive">{error}</div>
+        ) : filtered.length > 0 ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
+            {filtered.map((product, index) => (
+              <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03 }}>
+                <ProductCard product={product} />
+              </motion.div>
             ))}
-          </nav>
-          <div className="relative ml-auto w-56 sm:w-72">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar sillones, sillas..." className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-9 pr-9 text-sm outline-none focus:border-stone-400" />
-            <Heart className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           </div>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-[2rem] bg-stone-900 text-white shadow-sm">
-          <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1800&q=85" alt="Sillón Chester" className="h-[360px] w-full object-cover opacity-75" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-transparent" />
-          <div className="absolute left-8 top-1/2 max-w-lg -translate-y-1/2 sm:left-12">
-            <span className="rounded-full bg-white/20 px-4 py-2 text-xs font-bold backdrop-blur">Fabricación artesanal</span>
-            <h1 className="mt-5 text-4xl font-black tracking-tight sm:text-6xl">Línea Chester</h1>
-            <p className="mt-3 text-base text-white/90 sm:text-lg">Elegancia y confort artesanal para tu living</p>
-            <button onClick={() => irACatalogo("Catálogo")} className="mt-6 rounded-full bg-white px-6 py-3 text-sm font-bold text-stone-950">Descubrir catálogo</button>
+        ) : (
+          <div className="py-20 text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-secondary"><Search className="h-8 w-8 text-muted-foreground" /></div>
+            <h3 className="mb-2 text-lg font-semibold">No se encontraron productos</h3>
+            <p className="mb-4 text-muted-foreground">Probá ajustando los filtros o la búsqueda.</p>
+            <Button onClick={clearFilters}>Limpiar todos los filtros</Button>
           </div>
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-4 lg:px-8">
-        {[{ icon: Truck, title: "Envío a todo el país" }, { icon: ShieldCheck, title: "Efectivo o transferencia" }, { icon: Undo2, title: "Devoluciones 30 días" }, { icon: UserRound, title: "Atención personalizada" }].map(({ icon: Icon, title }) => (
-          <div key={title} className="rounded-2xl border border-stone-200 bg-white p-5 text-center shadow-sm"><Icon className="mx-auto h-6 w-6 text-stone-700" /><p className="mt-3 text-sm font-bold text-stone-900">{title}</p></div>
-        ))}
-      </section>
-
-      <section id="catalogo" className="mx-auto max-w-7xl scroll-mt-24 px-4 pb-10 sm:px-6 lg:px-8">
-        <div className="mb-5 flex items-end justify-between gap-3">
-          <div><h2 className="text-2xl font-black text-stone-950">{activeCategoria === "Inicio" ? "Catálogo" : activeCategoria}</h2><p className="mt-1 text-sm text-stone-500">Precios y disponibilidad actualizados desde Odoo.</p></div>
-          <span className="text-sm font-semibold text-stone-500">{visibles.length} productos</span>
-        </div>
-        {loading ? <div className="flex h-64 items-center justify-center text-stone-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Cargando catálogo...</div> : error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">{error}</div> : visibles.length === 0 ? <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-stone-200 bg-white py-16 text-stone-400"><Package className="h-10 w-10" /><p className="text-sm">No encontramos productos para esa búsqueda.</p></div> : <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{visibles.map((producto) => <ProductCard key={producto.id} producto={producto} />)}</div>}
-      </section>
-    </main>
+        )}
+      </div>
+    </div>
   );
 }
