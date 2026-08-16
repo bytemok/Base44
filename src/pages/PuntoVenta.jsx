@@ -11,7 +11,21 @@ import EscannerCamara from "@/components/erp/EscannerCamara";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
+const atributoValor = (p, nombre) => (p.atributos || []).find((a) => (a.atributo || "").toLowerCase().includes(nombre))?.valor || "";
 const atributosTexto = (p) => (p.atributos || []).map((a) => [a.atributo, a.valor].filter(Boolean).join(": ")).filter(Boolean).join(" · ");
+const nombreCombinacion = (p) => (p.atributos || []).map((a) => a.valor).filter(Boolean).join(" · ");
+const colorTapizado = (tapizado) => {
+  const t = (tapizado || "").toLowerCase();
+  if (t.includes("negro")) return "#111827";
+  if (t.includes("musgo") || t.includes("verde")) return "#4b5d36";
+  if (t.includes("vison") || t.includes("visón")) return "#8b7b6b";
+  if (t.includes("mustang") || t.includes("marr") || t.includes("camel")) return "#8a5a44";
+  if (t.includes("natural") || t.includes("lino") || t.includes("beige") || t.includes("arena")) return "#d8c3a5";
+  if (t.includes("gris")) return "#6b7280";
+  if (t.includes("azul")) return "#1e40af";
+  return "#c7b299";
+};
+const TapizadoSwatch = ({ tapizado }) => tapizado ? <span className="inline-block h-3 w-3 shrink-0 rounded-full border border-slate-300" style={{ backgroundColor: colorTapizado(tapizado) }} /> : null;
 
 const iconoMetodo = (m) => {
   const n = (m.nombre || "").toLowerCase();
@@ -39,6 +53,8 @@ export default function PuntoVenta() {
   const [metodoSel, setMetodoSel] = useState(null);
   const [recibido, setRecibido] = useState("");
   const [operacionPago, setOperacionPago] = useState("");
+  const [descripcionPedido, setDescripcionPedido] = useState("");
+  const [soloStock, setSoloStock] = useState(false);
   const [creando, setCreando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [error, setError] = useState(null);
@@ -61,11 +77,10 @@ export default function PuntoVenta() {
 
   const productosVisibles = useMemo(() => {
     const t = prodInput.trim().toLowerCase();
-    const base = t.length >= 2
-      ? catalogo.filter((p) => [p.nombre, p.codigo, p.barcode, atributosTexto(p)].join(" ").toLowerCase().includes(t))
-      : catalogo;
+    let base = soloStock ? catalogo.filter((p) => Number(p.stock) >= 1) : catalogo;
+    if (t.length >= 2) base = base.filter((p) => [p.nombre, p.codigo, p.barcode, atributosTexto(p), nombreCombinacion(p)].join(" ").toLowerCase().includes(t));
     return base.slice(0, 60);
-  }, [catalogo, prodInput]);
+  }, [catalogo, prodInput, soloStock]);
 
   const items = Object.values(carrito);
   const total = useMemo(() => items.reduce((s, p) => s + (Number(p.precio) || 0) * p.qty, 0), [items]);
@@ -214,7 +229,7 @@ export default function PuntoVenta() {
         partner_id: partner.id,
         lineas,
         confirmar: true,
-        nota: "Venta creada desde Punto de Venta",
+        nota: ["Venta creada desde Punto de Venta", descripcionPedido.trim()].filter(Boolean).join("\n"),
       };
       if (conPago && metodoSel) {
         if (esMercadoPago && !operacionPago.trim()) { setError("Ingresá el número de operación de Mercado Pago"); setCreando(false); return; }
@@ -246,6 +261,7 @@ export default function PuntoVenta() {
     setPantalla("venta");
     setRecibido("");
     setOperacionPago("");
+    setDescripcionPedido("");
   };
 
   if (cargando) {
@@ -455,6 +471,13 @@ export default function PuntoVenta() {
               {buscandoCodigo && <span className="flex items-center px-1 text-slate-400"><Loader2 className="h-4 w-4 animate-spin" /></span>}
               <EscannerCamara title="Escanear producto" label="Cámara" onDetect={procesarCodigo} />
             </div>
+            <button
+              type="button"
+              onClick={() => setSoloStock((v) => !v)}
+              className={`mt-3 rounded-lg border px-3 py-2 text-xs font-semibold ${soloStock ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500"}`}
+            >
+              {soloStock ? "Mostrando solo stock disponible" : "Mostrar solo con stock"}
+            </button>
           </form>
 
           {error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>}
@@ -467,7 +490,8 @@ export default function PuntoVenta() {
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
               {productosVisibles.map((p) => {
-                const variante = atributosTexto(p);
+                const variante = nombreCombinacion(p);
+                const tapizado = atributoValor(p, "tapizado");
                 return (
                   <button
                     key={p.product_id}
@@ -478,9 +502,10 @@ export default function PuntoVenta() {
                     <div>
                       <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-800">{p.nombre}</p>
                       {variante ? (
-                        <p className="mt-2 line-clamp-3 rounded-lg bg-emerald-50 px-2 py-1.5 text-[11px] font-semibold leading-snug text-emerald-800">
-                          {variante}
-                        </p>
+                        <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-emerald-50 px-2 py-1.5 text-[11px] font-semibold leading-snug text-emerald-800">
+                          <TapizadoSwatch tapizado={tapizado} />
+                          <span className="line-clamp-3">{variante}</span>
+                        </div>
                       ) : (p.codigo || p.barcode) ? (
                         <p className="mt-2 rounded-lg bg-slate-100 px-2 py-1.5 font-mono text-[11px] font-medium text-slate-600">
                           {p.codigo || p.barcode}
@@ -571,19 +596,23 @@ export default function PuntoVenta() {
               <p className="px-3 py-8 text-center text-sm text-slate-400">Escaneá o tocá un producto para empezar</p>
             ) : (
               <div className="max-h-[45vh] divide-y divide-slate-100 overflow-auto">
-                {items.map((p) => (
-                  <div key={p.product_id} className="px-3 py-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800">{p.nombre}</p>
-                      <button onClick={() => quitar(p.product_id)} className="shrink-0 text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>
-                    </div>
-                    {p.atributos?.length > 0 && (
-                      <div className="mt-0.5 flex flex-wrap gap-1">
-                        {p.atributos.map((a, i) => (
-                          <span key={i} className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600">{a.atributo}: {a.valor}</span>
-                        ))}
+                {items.map((p) => {
+                  const variante = nombreCombinacion(p);
+                  const tapizado = atributoValor(p, "tapizado");
+                  return (
+                    <div key={p.product_id} className="px-3 py-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-slate-800">{p.nombre}</p>
+                          {variante && (
+                            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700">
+                              <TapizadoSwatch tapizado={tapizado} />
+                              <span className="truncate">{variante}</span>
+                            </p>
+                          )}
+                        </div>
+                        <button onClick={() => quitar(p.product_id)} className="shrink-0 text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>
                       </div>
-                    )}
                     <div className="mt-1.5 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1">
                         <button onClick={() => inc(p.product_id, -1)} className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50"><Minus className="h-4 w-4" /></button>
@@ -596,9 +625,21 @@ export default function PuntoVenta() {
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             )}
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-3">
+            <label className="mb-1.5 block text-xs font-semibold text-slate-600">Aclaración del pedido</label>
+            <textarea
+              value={descripcionPedido}
+              onChange={(e) => setDescripcionPedido(e.target.value)}
+              placeholder="Ej: entregar después de las 18, confirmar color con cliente..."
+              rows={3}
+              className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:border-emerald-400 focus:bg-white"
+            />
           </div>
 
           {/* Total + Cobrar */}
