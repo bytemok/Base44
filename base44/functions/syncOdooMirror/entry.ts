@@ -8,6 +8,7 @@ const DEFAULT_RESOURCES = [
   "clientes",
   "facturas",
   "catalogo",
+  "inventario",
   "control_stock",
   "recepciones",
   "enviados",

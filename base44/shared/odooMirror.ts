@@ -7,6 +7,7 @@ const CACHEABLE_RESOURCES = new Set([
   "enviados",
   "facturas",
   "catalogo",
+  "inventario",
   "control_stock",
   "alertas_stock",
   "proveedores",
@@ -14,6 +15,8 @@ const CACHEABLE_RESOURCES = new Set([
 ]);
 
 const DEFAULT_MAX_AGE_MS = 2 * 60 * 60 * 1000;
+const PAYLOAD_CHUNK_SIZE = 20000;
+const PART_TOKEN = "::part::";
 
 export function isCacheableResource(resource) {
   return CACHEABLE_RESOURCES.has(resource);
@@ -21,7 +24,6 @@ export function isCacheableResource(resource) {
 
 export function cacheKeyFor(resource, body = {}) {
   if (resource === "detalle" && body.order_id) return `${resource}:${body.order_id}`;
-  if (body.limit) return `${resource}:limit:${body.limit}`;
   return resource || "";
 }
 
@@ -61,9 +63,28 @@ export async function readCachedResource(base44, resourceKey, maxAgeMs = DEFAULT
     skip += 500;
   }
   const seen = new Set();
-  const data = (records || []).filter((r) => {
-    if (seen.has(r.record_key)) return false;
-    seen.add(r.record_key);
+  const chunked = new Map();
+  const singles = [];
+  (records || []).forEach((r) => {
+    const key = String(r.record_key || "");
+    if (!key.includes(PART_TOKEN)) {
+      singles.push(r);
+      return;
+    }
+    const [baseKey, rest] = key.split(PART_TOKEN);
+    const [partIndexRaw, totalRaw] = String(rest || "").split("::");
+    const partIndex = Number(partIndexRaw);
+    const total = Number(totalRaw);
+    if (!chunked.has(baseKey)) chunked.set(baseKey, { order_index: Math.floor((Number(r.order_index) || 0) / 1000), parts: [], total });
+    chunked.get(baseKey).parts[partIndex] = r.payload || "";
+  });
+  const entries = singles.map((r) => ({ key: r.record_key, order_index: Math.floor((Number(r.order_index) || 0) / 1000), payload: r.payload || "" }));
+  chunked.forEach((value, key) => {
+    if (value.parts.filter((p) => p !== undefined).length === value.total) entries.push({ key, order_index: value.order_index, payload: value.parts.join("") });
+  });
+  const data = entries.sort((a, b) => a.order_index - b.order_index).filter((r) => {
+    if (seen.has(r.key)) return false;
+    seen.add(r.key);
     return true;
   }).map((r) => {
     try {
@@ -88,18 +109,22 @@ export async function saveCachedResource(base44, resourceKey, rows, extra = {}) 
   await base44.asServiceRole.entities.OdooMirrorRecord.deleteMany({ resource: resourceKey });
 
   const seen = new Set();
-  const payloads = (rows || []).filter((row, index) => {
+  const payloads = [];
+  (rows || []).forEach((row, index) => {
     const key = recordKey(row, index);
-    if (seen.has(key)) return false;
+    if (seen.has(key)) return;
     seen.add(key);
-    return true;
-  }).map((row, index) => ({
-    resource: resourceKey,
-    record_key: recordKey(row, index),
-    order_index: index,
-    payload: JSON.stringify(row || {}),
-    synced_at: now,
-  }));
+    const raw = JSON.stringify(row || {});
+    if (raw.length <= PAYLOAD_CHUNK_SIZE) {
+      payloads.push({ resource: resourceKey, record_key: key, order_index: index * 1000, payload: raw, synced_at: now });
+      return;
+    }
+    const parts = [];
+    for (let start = 0; start < raw.length; start += PAYLOAD_CHUNK_SIZE) parts.push(raw.slice(start, start + PAYLOAD_CHUNK_SIZE));
+    parts.forEach((part, partIndex) => {
+      payloads.push({ resource: resourceKey, record_key: `${key}${PART_TOKEN}${partIndex}::${parts.length}`, order_index: index * 1000 + partIndex, payload: part, synced_at: now });
+    });
+  });
   for (let i = 0; i < payloads.length; i += 500) {
     await base44.asServiceRole.entities.OdooMirrorRecord.bulkCreate(payloads.slice(i, i + 500));
   }
