@@ -459,23 +459,34 @@ export default function PuntoVenta() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4">
-              {productosVisibles.map((p) => (
-                <button
-                  key={p.product_id}
-                  type="button"
-                  onClick={() => agregarProducto(p)}
-                  className="flex min-h-[116px] flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm active:scale-[0.98]"
-                >
-                  <div>
-                    <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-800">{p.nombre}</p>
-                    {atributosTexto(p) && <p className="mt-1 line-clamp-2 text-[11px] font-medium leading-snug text-slate-500">{atributosTexto(p)}</p>}
-                  </div>
-                  <div className="mt-2 flex items-end justify-between gap-1">
-                    <span className="text-sm font-bold text-emerald-700">{fmt.format(p.precio || 0)}</span>
-                    {p.stock !== undefined && <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${Number(p.stock) > 0 ? "bg-slate-100 text-slate-500" : "bg-red-50 text-red-500"}`}>{Number(p.stock) || 0} u.</span>}
-                  </div>
-                </button>
-              ))}
+              {productosVisibles.map((p) => {
+                const variante = atributosTexto(p);
+                return (
+                  <button
+                    key={p.product_id}
+                    type="button"
+                    onClick={() => agregarProducto(p)}
+                    className="flex min-h-[132px] flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-emerald-300 hover:shadow-sm active:scale-[0.98]"
+                  >
+                    <div>
+                      <p className="line-clamp-2 text-sm font-medium leading-snug text-slate-800">{p.nombre}</p>
+                      {variante ? (
+                        <p className="mt-2 line-clamp-3 rounded-lg bg-emerald-50 px-2 py-1.5 text-[11px] font-semibold leading-snug text-emerald-800">
+                          {variante}
+                        </p>
+                      ) : (p.codigo || p.barcode) ? (
+                        <p className="mt-2 rounded-lg bg-slate-100 px-2 py-1.5 font-mono text-[11px] font-medium text-slate-600">
+                          {p.codigo || p.barcode}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="mt-2 flex items-end justify-between gap-1">
+                      <span className="text-sm font-bold text-emerald-700">{fmt.format(p.precio || 0)}</span>
+                      {p.stock !== undefined && <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${Number(p.stock) > 0 ? "bg-slate-100 text-slate-500" : "bg-red-50 text-red-500"}`}>{Number(p.stock) || 0} u.</span>}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
