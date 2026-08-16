@@ -13,7 +13,7 @@ const CACHEABLE_RESOURCES = new Set([
   "sugerencias_compra",
 ]);
 
-const DEFAULT_MAX_AGE_MS = 15 * 60 * 1000;
+const DEFAULT_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
 export function isCacheableResource(resource) {
   return CACHEABLE_RESOURCES.has(resource);

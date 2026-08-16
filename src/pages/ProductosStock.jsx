@@ -1,24 +1,26 @@
 import React, { useState, useMemo } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
+import { groupCatalogoPorProductoPadre } from "@/lib/groupCatalogo";
 import { Search, Package, Eye, EyeOff, ChevronDown, Boxes, CheckCircle2 } from "lucide-react";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
 export default function ProductosStock() {
-  const { data, loading, error } = useOdoo("inventario", 200);
+  const { data, loading, error } = useOdoo("catalogo");
+  const productos = useMemo(() => groupCatalogoPorProductoPadre(data), [data]);
   const [q, setQ] = useState("");
   const [soloStock, setSoloStock] = useState(false);
   const [open, setOpen] = useState(new Set());
 
   const filas = useMemo(() => {
-    let arr = data.map((t) => ({ ...t, stockTotal: (t.variantes || []).reduce((s, v) => s + (v.stock || 0), 0) }));
+    let arr = productos.map((t) => ({ ...t, stockTotal: (t.variantes || []).reduce((s, v) => s + (v.stock || 0), 0) }));
     if (soloStock) arr = arr.filter((t) => t.stockTotal > 0);
     if (q.trim()) {
       const t = q.toLowerCase();
       arr = arr.filter((p) => [p.nombre, p.codigo, p.categoria].join(" ").toLowerCase().includes(t));
     }
     return arr;
-  }, [data, q, soloStock]);
+  }, [productos, q, soloStock]);
 
   const toggle = (id) =>
     setOpen((prev) => {

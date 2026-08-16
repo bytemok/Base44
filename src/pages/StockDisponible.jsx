@@ -1,19 +1,21 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
+import { groupCatalogoPorProductoPadre } from "@/lib/groupCatalogo";
 import { Search, Package, PackageCheck, ChevronDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { downloadCSV } from "@/lib/csvExport";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
 export default function StockDisponible() {
-  const { data, loading, error } = useOdoo("inventario", 200);
+  const { data, loading, error } = useOdoo("catalogo");
+  const productos = useMemo(() => groupCatalogoPorProductoPadre(data), [data]);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(new Set());
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 30;
 
   const filas = useMemo(() => {
-    let arr = data
+    let arr = productos
       .map((t) => ({ ...t, stockTotal: (t.variantes || []).reduce((s, v) => s + (v.stock || 0), 0) }))
       .filter((t) => t.stockTotal > 0)
       .sort((a, b) => (a.nombre || "").localeCompare(b.nombre || "", "es"));
@@ -22,7 +24,7 @@ export default function StockDisponible() {
       arr = arr.filter((p) => [p.nombre, p.codigo, p.categoria].join(" ").toLowerCase().includes(t));
     }
     return arr;
-  }, [data, q]);
+  }, [productos, q]);
 
   useEffect(() => { setPage(1); }, [q]);
 
