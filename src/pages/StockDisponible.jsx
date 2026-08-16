@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useOdoo } from "@/hooks/useOdoo";
-import { Search, Package, PackageCheck, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Package, PackageCheck, ChevronDown, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { downloadCSV } from "@/lib/csvExport";
 
 const fmt = new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 });
 
@@ -36,6 +37,23 @@ export default function StockDisponible() {
       return n;
     });
 
+  const exportInventario = () => {
+    const rows = filas.flatMap((p) =>
+      (p.variantes || []).filter((v) => v.stock > 0).map((v) => [
+        p.nombre || "",
+        v.nombre || "",
+        v.codigo || p.codigo || "",
+        v.barcode || "",
+        p.categoria || "",
+        v.stock || 0,
+        v.precio || p.precio_base || 0,
+      ])
+    );
+    const d = new Date();
+    const stamp = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    downloadCSV(`inventario-stock-${stamp}.csv`, ["Producto", "Variante", "Código", "Código de barras", "Categoría", "Stock", "Precio"], rows);
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -45,14 +63,19 @@ export default function StockDisponible() {
             Productos disponibles para vender · {filas.length} producto(s) · {totalUnidades} unidades
           </p>
         </div>
-        <div className="relative sm:w-72">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar producto..."
-            className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-2 text-sm outline-none focus:border-slate-400"
-          />
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <button onClick={exportInventario} disabled={loading || !filas.length} className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+            <Download className="h-4 w-4" /> Descargar inventario
+          </button>
+          <div className="relative sm:w-72">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar producto..."
+              className="w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 py-2 text-sm outline-none focus:border-slate-400"
+            />
+          </div>
         </div>
       </div>
 
