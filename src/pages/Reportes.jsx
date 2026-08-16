@@ -1,11 +1,12 @@
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Truck, Receipt, Boxes, BarChart3, TrendingUp } from "lucide-react";
+import { Truck, Receipt, Boxes, BarChart3, TrendingUp, HandCoins } from "lucide-react";
 import ReporteLogistica from "@/components/erp/reportes/ReporteLogistica";
 import ReporteVentas from "@/components/erp/reportes/ReporteVentas";
 import ReporteStock from "@/components/erp/reportes/ReporteStock";
 import ReporteMensualClave from "@/components/erp/reportes/ReporteMensualClave";
 import ReporteProgresoLogistico from "@/components/erp/reportes/ReporteProgresoLogistico";
+import ReporteVentasSenas from "@/components/erp/reportes/ReporteVentasSenas";
 
 export default function Reportes() {
   return (
@@ -20,12 +21,14 @@ export default function Reportes() {
           <TabsTrigger value="progreso" className="gap-1.5"><TrendingUp className="h-4 w-4" /> Progreso logístico</TabsTrigger>
           <TabsTrigger value="mensual" className="gap-1.5"><BarChart3 className="h-4 w-4" /> Métricas clave</TabsTrigger>
           <TabsTrigger value="logistica" className="gap-1.5"><Truck className="h-4 w-4" /> Logística</TabsTrigger>
+          <TabsTrigger value="ventas-senas" className="gap-1.5"><HandCoins className="h-4 w-4" /> Ventas y señas</TabsTrigger>
           <TabsTrigger value="ventas" className="gap-1.5"><Receipt className="h-4 w-4" /> Ventas</TabsTrigger>
           <TabsTrigger value="stock" className="gap-1.5"><Boxes className="h-4 w-4" /> Stock</TabsTrigger>
         </TabsList>
         <TabsContent value="progreso"><ReporteProgresoLogistico /></TabsContent>
         <TabsContent value="mensual"><ReporteMensualClave /></TabsContent>
         <TabsContent value="logistica"><ReporteLogistica /></TabsContent>
+        <TabsContent value="ventas-senas"><ReporteVentasSenas /></TabsContent>
         <TabsContent value="ventas"><ReporteVentas /></TabsContent>
         <TabsContent value="stock"><ReporteStock /></TabsContent>
       </Tabs>
