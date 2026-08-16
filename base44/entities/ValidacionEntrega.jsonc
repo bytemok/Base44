@@ -1,0 +1,75 @@
+{
+  "type": "object",
+  "properties": {
+    "orden": {
+      "type": "string",
+      "title": "N\u00famero de Orden",
+      "description": "Ej: S07565"
+    },
+    "cliente": {
+      "type": "string",
+      "title": "Cliente"
+    },
+    "monto_adeudado": {
+      "type": "number",
+      "title": "Monto Adeudado ($)"
+    },
+    "entregado_por": {
+      "type": "string",
+      "title": "Entregado Por",
+      "enum": [
+        "Mart\u00edn",
+        "Rodri",
+        "Otro"
+      ]
+    },
+    "fecha_entrega": {
+      "type": "string",
+      "format": "date",
+      "title": "Fecha de Entrega"
+    },
+    "metodo_pago": {
+      "type": "string",
+      "title": "M\u00e9todo de Pago",
+      "enum": [
+        "Efectivo",
+        "Mercado Pago",
+        "Transferencia",
+        "Cheque",
+        "Otro"
+      ]
+    },
+    "estado_validacion": {
+      "type": "string",
+      "title": "Estado",
+      "enum": [
+        "Pendiente",
+        "Validado",
+        "Pago Recibido"
+      ],
+      "default": "Pendiente"
+    },
+    "fecha_pago": {
+      "type": "string",
+      "format": "date",
+      "title": "Fecha de Pago Recibido"
+    },
+    "monto_recibido": {
+      "type": "number",
+      "title": "Monto Recibido ($)"
+    },
+    "referencia_pago": {
+      "type": "string",
+      "title": "Referencia de Pago (Mercado Pago, Transf, etc.)"
+    },
+    "notas": {
+      "type": "string",
+      "title": "Notas"
+    }
+  },
+  "required": [
+    "orden",
+    "monto_adeudado"
+  ],
+  "name": "ValidacionEntrega"
+}

@@ -1,0 +1,45 @@
+{
+  "name": "Comparar Estados de Pedidos con Odoo",
+  "description": "Cada 4 horas compara los estados de los pedidos de la app contra Odoo y registra alertas ante discrepancias.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */4 * * *",
+      "timezone": "America/Buenos_Aires",
+      "events": [],
+      "one_time_date": null,
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "comparar_estados_pedidos_odoo",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "comparar_estados": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "compararEstadosPedidosOdoo",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Comparar estados",
+            "description": "Pedidos app vs Odoo"
+          }
+        }
+      }
+    ]
+  }
+}
