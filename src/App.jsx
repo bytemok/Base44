@@ -71,6 +71,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       {/* Add your page Route elements here */}
+      <Route path="/" element={<CatalogoPublico />} />
       <Route path="/catalogo" element={<CatalogoPublico />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -80,7 +81,7 @@ const AuthenticatedApp = () => {
         <Route element={<VendedorRouteGuard />}>
           <Route path="/etiquetas" element={<Etiquetas />} />
           <Route element={<ErpLayout />}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/vendedor" element={<VendedorPanel />} />
             <Route path="/vendedor/nueva-venta" element={<VendedorPanel />} />
             <Route path="/vendedor/stock" element={<VendedorPanel />} />
