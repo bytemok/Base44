@@ -88,17 +88,26 @@ export default function ReporteMensualClave() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50">
-          <Download className="h-4 w-4" /> Descargar CSV
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-slate-900">Cierre mensual automático</h2>
+          <p className="text-sm text-slate-500">Suma total de ventas y pedidos entregados por periodo.</p>
+        </div>
+        <button onClick={exportCSV} className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
+          <Download className="h-4 w-4" /> Descargar cierre
         </button>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi icon={Receipt} label="Volumen vendido" value={fmt.format(stats.totalVentas)} sub={`${stats.totalPedidos} pedido(s)`} color="text-emerald-600" />
         <Kpi icon={Package} label="Unidades vendidas" value={stats.totalUnidades} sub="top productos" color="text-blue-600" />
-        <Kpi icon={Truck} label="Eficiencia entrega" value={`${stats.totalEntregas ? Math.round((stats.entregadas / stats.totalEntregas) * 100) : 0}%`} sub={`${stats.entregadas} de ${stats.totalEntregas}`} color="text-amber-600" />
+        <Kpi icon={Truck} label="Pedidos entregados" value={stats.entregadas} sub={`${stats.totalEntregas} programados`} color="text-amber-600" />
         <Kpi icon={TrendingUp} label="Ticket promedio" value={fmt.format(stats.totalPedidos ? stats.totalVentas / stats.totalPedidos : 0)} color="text-slate-600" />
+      </div>
+
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="grid grid-cols-[1fr_140px_140px] gap-3 border-b border-slate-100 px-4 py-3 text-xs font-semibold uppercase text-slate-400"><span>Periodo</span><span>Total ventas</span><span>Entregados</span></div>
+        {stats.meses.map((m) => { const e = stats.eficiencia.find((x) => x.mes === m.mes) || {}; return <div key={m.mes} className="grid grid-cols-[1fr_140px_140px] gap-3 border-b border-slate-100 px-4 py-3 text-sm last:border-0"><span className="font-medium text-slate-900">{m.mes}</span><span className="font-semibold text-slate-900">{fmt.format(m.ventas)}</span><span className="font-semibold text-emerald-700">{e.enviadas || 0}</span></div>; })}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
