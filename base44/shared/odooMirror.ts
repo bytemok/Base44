@@ -7,7 +7,6 @@ const CACHEABLE_RESOURCES = new Set([
   "enviados",
   "facturas",
   "catalogo",
-  "inventario",
   "control_stock",
   "alertas_stock",
   "proveedores",
@@ -53,7 +52,14 @@ export async function readCachedResource(base44, resourceKey, maxAgeMs = DEFAULT
   if (!state?.last_sync_at) return null;
   if (Date.now() - Date.parse(state.last_sync_at) > maxAgeMs) return null;
 
-  const records = await base44.asServiceRole.entities.OdooMirrorRecord.filter({ resource: resourceKey }, "order_index", 1000);
+  const records = [];
+  let skip = 0;
+  while (true) {
+    const batch = await base44.asServiceRole.entities.OdooMirrorRecord.filter({ resource: resourceKey }, "order_index", 500, skip);
+    records.push(...(batch || []));
+    if (!batch || batch.length < 500) break;
+    skip += 500;
+  }
   const seen = new Set();
   const data = (records || []).filter((r) => {
     if (seen.has(r.record_key)) return false;
@@ -94,7 +100,9 @@ export async function saveCachedResource(base44, resourceKey, rows, extra = {}) 
     payload: JSON.stringify(row || {}),
     synced_at: now,
   }));
-  if (payloads.length) await base44.asServiceRole.entities.OdooMirrorRecord.bulkCreate(payloads);
+  for (let i = 0; i < payloads.length; i += 500) {
+    await base44.asServiceRole.entities.OdooMirrorRecord.bulkCreate(payloads.slice(i, i + 500));
+  }
 
   const state = {
     resource: resourceKey,

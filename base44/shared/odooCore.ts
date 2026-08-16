@@ -137,7 +137,7 @@ export async function createOdooClient(defaultLimit = 100) {
     });
   };
 
-  const searchReadAll = async (model, domain, fields, order, batch = 200, max = 3000) => {
+  const searchReadAll = async (model, domain, fields, order, batch = 200, max = 20000) => {
     const out = [];
     let off = 0;
     while (off < max) {

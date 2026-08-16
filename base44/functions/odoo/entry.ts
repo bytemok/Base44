@@ -597,12 +597,11 @@ Deno.serve(async (req) => {
         },
       });
     } else if (resource === "catalogo") {
-      const variants = await searchRead(
+      const variants = await searchReadAll(
         "product.product",
         [["active", "=", true], ["type", "in", ["product", "consu"]]],
-        ["id", "name", "default_code", "barcode", "image_128", "lst_price", "qty_available", "type", "product_tmpl_id"],
-        "name",
-        100
+        ["id", "name", "default_code", "barcode", "lst_price", "qty_available", "type", "product_tmpl_id"],
+        "name"
       );
       const tmplIds = [];
       const seenT = new Set();
@@ -613,7 +612,7 @@ Deno.serve(async (req) => {
       const tmplMap = {};
       if (tmplIds.length) {
         try {
-          const tmpls = await searchRead("product.template", [["id", "in", tmplIds]], ["id", "is_published", "list_price"], null, 100);
+          const tmpls = await searchReadAll("product.template", [["id", "in", tmplIds]], ["id", "name", "default_code", "is_published", "list_price", "categ_id"], null);
           tmpls.forEach((t) => (tmplMap[t.id] = t));
         } catch (e) {}
       }
@@ -624,13 +623,16 @@ Deno.serve(async (req) => {
           product_id: v.id,
           tmpl_id: tid,
           nombre: v.name || "",
+          producto_padre: t.name || v.name || "",
+          codigo_padre: t.default_code || "",
+          categoria: m2o(t.categ_id),
           codigo: v.default_code || "",
           barcode: v.barcode || "",
           precio: v.lst_price || t.list_price || 0,
           stock: v.qty_available || 0,
           tipo: v.type || "",
           publicado: !!t.is_published,
-          imagen: v.image_128 || null,
+          imagen: null,
         };
       });
       extra.odoo_url = ODOO_URL;
@@ -638,7 +640,7 @@ Deno.serve(async (req) => {
       const tmpls = await searchReadAll(
         "product.template",
         [["active", "=", true], ["type", "in", ["product", "consu"]]],
-        ["id", "name", "default_code", "list_price", "is_published", "type", "categ_id", "image_128"],
+        ["id", "name", "default_code", "list_price", "is_published", "type", "categ_id"],
         "name"
       );
       const tmplIds = tmpls.map((t) => t.id);
@@ -719,7 +721,7 @@ Deno.serve(async (req) => {
         publicado: !!t.is_published,
         tipo: t.type || "",
         categoria: m2o(t.categ_id),
-        imagen: t.image_128 || null,
+        imagen: null,
         variantes: byTmpl[t.id] || [],
       }));
       extra.odoo_url = ODOO_URL;
@@ -749,12 +751,11 @@ Deno.serve(async (req) => {
       await logSecurityEvent(base44, user, { area: "sistema", resource: "pedido", action: "coordinar_pedido", source: "odoo", record_ref: String(orderId), count: 1, status: "ok" });
       return Response.json({ resource: "coordinar_pedido", ok: true });
     } else if (resource === "control_stock") {
-      const r = await searchRead(
+      const r = await searchReadAll(
         "product.product",
         [["active", "=", true], ["type", "in", ["product", "consu"]]],
         ["id", "name", "default_code", "barcode", "qty_available", "lst_price"],
-        "name",
-        500
+        "name"
       );
       const attrMap = await loadVariantAttrs(r.map((p) => p.id));
       rows = r.map((p) => ({
@@ -895,12 +896,11 @@ Deno.serve(async (req) => {
         };
       });
     } else if (resource === "alertas_stock") {
-      const r = await searchRead(
+      const r = await searchReadAll(
         "product.product",
         [["active", "=", true], ["type", "in", ["product", "consu"]]],
         ["id", "name", "default_code", "barcode", "qty_available", "lst_price", "type"],
-        "name",
-        500
+        "name"
       );
       const faltantes = r.filter((p) => (p.qty_available || 0) < 0).sort((a, b) => (a.qty_available - b.qty_available));
       const attrMap = await loadVariantAttrs(faltantes.map((p) => p.id));
@@ -919,7 +919,7 @@ Deno.serve(async (req) => {
       const r = await searchRead("res.partner", [["supplier_rank", ">", 0], ["active", "=", true]], ["id", "name", "email", "phone", "vat", "city"], "name", 300);
       rows = r.map((p) => ({ id: p.id, nombre: p.name || "", email: p.email || "", telefono: p.phone || "", cuit: p.vat || "", ciudad: p.city || "" }));
     } else if (resource === "sugerencias_compra") {
-      const productos = await searchRead("product.product", [["active", "=", true], ["type", "in", ["product", "consu"]]], ["id", "name", "default_code", "barcode", "qty_available", "standard_price", "seller_ids"], "name", 500);
+      const productos = await searchReadAll("product.product", [["active", "=", true], ["type", "in", ["product", "consu"]]], ["id", "name", "default_code", "barcode", "qty_available", "standard_price", "seller_ids"], "name");
       const prodIds = productos.map((p) => p.id);
       const opMap = {};
       if (prodIds.length) {
