@@ -14,6 +14,7 @@ import Ventas from '@/pages/Ventas';
 import PuntoVenta from '@/pages/PuntoVenta';
 import Clientes from '@/pages/Clientes';
 import Productos from '@/pages/Productos';
+import CatalogoPrecios from '@/pages/CatalogoPrecios';
 import PedidosCoordinar from '@/pages/PedidosCoordinar';
 import CalendarioEntregas from '@/pages/CalendarioEntregas';
 import Recepciones from '@/pages/Recepciones';
@@ -87,6 +88,7 @@ const AuthenticatedApp = () => {
           <Route path="/punto-venta" element={<PuntoVenta />} />
           <Route path="/clientes" element={<Clientes />} />
           <Route path="/productos" element={<Productos />} />
+          <Route path="/catalogo-precios" element={<CatalogoPrecios />} />
           <Route path="/coordinar" element={<PedidosCoordinar />} />
           <Route path="/calendario" element={<CalendarioEntregas />} />
           <Route path="/recepciones" element={<Recepciones />} />

@@ -1,0 +1,52 @@
+{
+  "name": "CatalogoPrecio",
+  "type": "object",
+  "properties": {
+    "nombre": {
+      "type": "string"
+    },
+    "categoria": {
+      "type": "string"
+    },
+    "descripcion": {
+      "type": "string"
+    },
+    "medidas": {
+      "type": "string"
+    },
+    "caracteristicas": {
+      "type": "string"
+    },
+    "opcionales": {
+      "type": "string"
+    },
+    "aclaraciones": {
+      "type": "string"
+    },
+    "precios_json": {
+      "type": "string",
+      "description": "JSON array: [{tela, precio}]"
+    },
+    "precio_min": {
+      "type": "number",
+      "default": 0
+    },
+    "precio_max": {
+      "type": "number",
+      "default": 0
+    },
+    "cierre_sugerido": {
+      "type": "string"
+    },
+    "fuente": {
+      "type": "string"
+    },
+    "activo": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "nombre"
+  ]
+}

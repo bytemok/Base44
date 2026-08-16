@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { invalidateOdoo } from "@/hooks/useOdoo";
+import { aplicarPreciosCatalogo } from "@/lib/catalogoPrecios";
 import {
   ScanLine, Search, Plus, Minus, Loader2, CheckCircle2, User, X,
   ShoppingCart, Trash2, Package, Banknote, Landmark, CreditCard, ArrowLeft,
@@ -98,19 +99,21 @@ export default function PuntoVenta() {
     (async () => {
       setCargando(true);
       try {
-        const [c, k, m] = await Promise.all([
+        const [c, k, m, preciosPdf] = await Promise.all([
           base44.functions.invoke("odoo", { resource: "clientes", limit: 500 }),
           base44.functions.invoke("odoo", { resource: "inventario" }),
           base44.functions.invoke("odoo", { resource: "metodos_pago" }).catch(() => ({ data: { data: [] } })),
+          base44.entities.CatalogoPrecio.list("nombre", 500).catch(() => []),
         ]);
         const cl = c.data?.data || [];
-        const productos = (k.data?.data || []).flatMap((p) =>
+        const productosOdoo = (k.data?.data || []).flatMap((p) =>
           (p.variantes || []).map((v) => ({
             ...v,
             nombre: v.nombre || p.nombre,
             categoria: p.categoria || "",
           }))
         );
+        const productos = aplicarPreciosCatalogo(productosOdoo, preciosPdf || []);
         setClientes(cl);
         setCatalogo(productos);
         setMetodos(m.data?.data || []);
@@ -134,7 +137,7 @@ export default function PuntoVenta() {
         ...c,
         [p.product_id]: prev
           ? { ...prev, qty: prev.qty + 1 }
-          : { product_id: p.product_id, nombre: p.nombre, codigo: p.codigo || "", barcode: p.barcode || "", qty: 1, precio: p.precio || 0, atributos: p.atributos || [] },
+          : { product_id: p.product_id, nombre: p.nombre, codigo: p.codigo || "", barcode: p.barcode || "", qty: 1, precio: p.precio || 0, precio_odoo: p.precio_odoo || p.precio || 0, precio_pdf: p.precio_pdf || 0, precio_fuente: p.precio_fuente || "Odoo", precio_tela_pdf: p.precio_tela_pdf || "", atributos: p.atributos || [] },
       };
     });
     setError(null);
@@ -513,7 +516,10 @@ export default function PuntoVenta() {
                       ) : null}
                     </div>
                     <div className="mt-2 flex items-end justify-between gap-1">
-                      <span className="text-sm font-bold text-emerald-700">{fmt.format(p.precio || 0)}</span>
+                      <div>
+                        <span className="text-sm font-bold text-emerald-700">{fmt.format(p.precio || 0)}</span>
+                        {p.precio_fuente === "PDF" && <p className="text-[10px] font-semibold text-amber-600">Precio PDF · {p.precio_tela_pdf}</p>}
+                      </div>
                       {p.stock !== undefined && <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${Number(p.stock) > 0 ? "bg-slate-100 text-slate-500" : "bg-red-50 text-red-500"}`}>{Number(p.stock) || 0} u.</span>}
                     </div>
                   </button>
@@ -610,6 +616,7 @@ export default function PuntoVenta() {
                               <span className="truncate">{variante}</span>
                             </p>
                           )}
+                          {p.precio_fuente === "PDF" && <p className="mt-0.5 text-[10px] font-semibold text-amber-600">Precio PDF · {p.precio_tela_pdf}</p>}
                         </div>
                         <button onClick={() => quitar(p.product_id)} className="shrink-0 text-slate-300 hover:text-red-500"><X className="h-4 w-4" /></button>
                       </div>
