@@ -85,12 +85,19 @@ export default function PuntoVenta() {
       try {
         const [c, k, m] = await Promise.all([
           base44.functions.invoke("odoo", { resource: "clientes", limit: 500 }),
-          base44.functions.invoke("odoo", { resource: "control_stock", limit: 500 }),
+          base44.functions.invoke("odoo", { resource: "inventario" }),
           base44.functions.invoke("odoo", { resource: "metodos_pago" }).catch(() => ({ data: { data: [] } })),
         ]);
         const cl = c.data?.data || [];
+        const productos = (k.data?.data || []).flatMap((p) =>
+          (p.variantes || []).map((v) => ({
+            ...v,
+            nombre: v.nombre || p.nombre,
+            categoria: p.categoria || "",
+          }))
+        );
         setClientes(cl);
-        setCatalogo(k.data?.data || []);
+        setCatalogo(productos);
         setMetodos(m.data?.data || []);
         // Cliente por defecto: Consumidor Final (se puede cambiar)
         const cf = cl.find((x) => /consumidor\s*final/i.test(x.nombre || ""));
