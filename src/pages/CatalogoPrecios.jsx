@@ -21,7 +21,7 @@ export default function CatalogoPrecios() {
     })();
   }, []);
 
-  const productosOdoo = useMemo(() => (inventario || []).flatMap((p) => (p.variantes || []).map((v) => ({ ...v, nombre: v.nombre || p.nombre }))), [inventario]);
+  const productosOdoo = useMemo(() => (inventario || []).flatMap((p) => (p.variantes || []).map((v) => ({ ...v, nombre: v.nombre || p.nombre, producto_padre: p.nombre }))), [inventario]);
   const comparacion = useMemo(() => compararConOdoo(catalogo, productosOdoo), [catalogo, productosOdoo]);
   const filtrados = useMemo(() => {
     const t = q.trim().toLowerCase();

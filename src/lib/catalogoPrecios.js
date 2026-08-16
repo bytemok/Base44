@@ -1,5 +1,10 @@
 const norm = (value = "") => String(value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
 const onlyNumbers = (value = "") => String(value).replace(/[^0-9]/g, "");
+const GENERICOS = new Set(["sillon", "sillones", "sofa", "sofas", "cama", "con", "sin", "para", "por", "del", "las", "los", "una", "uno", "base", "mts", "aprox", "cuerpos", "cuerpo", "tapizado", "patas", "alta", "altas", "baja", "bajas"]);
+
+const atributosTexto = (producto = {}) => (producto.atributos || []).map((a) => [a.atributo, a.valor].filter(Boolean).join(" ")).join(" ");
+const textoProducto = (producto = {}) => norm([producto.producto_padre, producto.nombre, atributosTexto(producto)].filter(Boolean).join(" "));
+const tokensUtiles = (value = "") => norm(value).split(" ").filter((t) => t.length > 2 && !GENERICOS.has(t));
 
 export const parsePrecios = (row) => {
   try {
@@ -10,15 +15,24 @@ export const parsePrecios = (row) => {
   }
 };
 
+const puntuarCatalogoProducto = (catalogo, producto) => {
+  const cText = norm([catalogo?.nombre, catalogo?.medidas].filter(Boolean).join(" "));
+  const pText = textoProducto(producto);
+  if (!cText || !pText) return 0;
+  if (pText.includes(cText) || cText.includes(pText)) return 100;
+  const parent = norm(producto?.producto_padre || "");
+  let score = parent && cText.includes(parent) ? 40 : 0;
+  tokensUtiles(cText).forEach((token) => { if (pText.includes(token)) score += 8; });
+  return score;
+};
+
 export const precioCatalogoParaProducto = (producto, catalogo = []) => {
-  const nombreProducto = norm(producto?.nombre || "");
-  if (!nombreProducto) return null;
-  const candidatos = catalogo.filter((c) => {
-    const n = norm(c.nombre || "");
-    return n && (nombreProducto.includes(n) || n.includes(nombreProducto));
-  });
+  const candidatos = catalogo
+    .map((c) => ({ item: c, score: puntuarCatalogoProducto(c, producto) }))
+    .filter((c) => c.score > 0)
+    .sort((a, b) => b.score - a.score || norm(b.item.nombre).length - norm(a.item.nombre).length);
   if (!candidatos.length) return null;
-  const item = candidatos.sort((a, b) => norm(b.nombre).length - norm(a.nombre).length)[0];
+  const item = candidatos[0].item;
   const precios = parsePrecios(item);
   if (!precios.length) return { item, precio: 0, tela: "" };
   const tapizado = norm((producto?.atributos || []).find((a) => norm(a.atributo).includes("tapizado"))?.valor || "");
@@ -41,11 +55,7 @@ export const aplicarPreciosCatalogo = (productos = [], catalogo = []) => product
 });
 
 export const compararConOdoo = (catalogo = [], productosOdoo = []) => catalogo.map((c) => {
-  const cn = norm(c.nombre || "");
-  const matches = productosOdoo.filter((p) => {
-    const pn = norm(p.nombre || "");
-    return cn && pn && (pn.includes(cn) || cn.includes(pn));
-  });
+  const matches = productosOdoo.filter((p) => puntuarCatalogoProducto(c, p) > 0);
   const precios = parsePrecios(c);
   const pdfMin = precios.length ? Math.min(...precios.map((p) => Number(p.precio) || 0).filter(Boolean)) : Number(c.precio_min) || 0;
   const pdfMax = precios.length ? Math.max(...precios.map((p) => Number(p.precio) || 0).filter(Boolean)) : Number(c.precio_max) || 0;

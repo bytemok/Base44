@@ -79,7 +79,7 @@ export default function PuntoVenta() {
   const productosVisibles = useMemo(() => {
     const t = prodInput.trim().toLowerCase();
     let base = soloStock ? catalogo.filter((p) => Number(p.stock) >= 1) : catalogo;
-    if (t.length >= 2) base = base.filter((p) => [p.nombre, p.codigo, p.barcode, atributosTexto(p), nombreCombinacion(p)].join(" ").toLowerCase().includes(t));
+    if (t.length >= 2) base = base.filter((p) => [p.producto_padre, p.nombre, p.codigo, p.barcode, atributosTexto(p), nombreCombinacion(p)].join(" ").toLowerCase().includes(t));
     return base.slice(0, 60);
   }, [catalogo, prodInput, soloStock]);
 
@@ -110,6 +110,7 @@ export default function PuntoVenta() {
           (p.variantes || []).map((v) => ({
             ...v,
             nombre: v.nombre || p.nombre,
+            producto_padre: p.nombre,
             categoria: p.categoria || "",
           }))
         );
