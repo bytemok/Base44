@@ -36,6 +36,7 @@ export default function PuntoVenta() {
   const [pantalla, setPantalla] = useState("venta"); // venta | cobro
   const [metodoSel, setMetodoSel] = useState(null);
   const [recibido, setRecibido] = useState("");
+  const [operacionPago, setOperacionPago] = useState("");
   const [creando, setCreando] = useState(false);
   const [resultado, setResultado] = useState(null);
   const [error, setError] = useState(null);
@@ -69,7 +70,8 @@ export default function PuntoVenta() {
   const unidades = useMemo(() => items.reduce((s, p) => s + p.qty, 0), [items]);
   const montoRecibido = Number(recibido) || 0;
   const esEfectivo = metodoSel && (metodoSel.tipo === "cash" || /efectivo|caja/i.test(metodoSel.nombre || ""));
-  const esBanco = metodoSel && !esEfectivo && metodoSel.tipo === "bank";
+  const esMercadoPago = metodoSel && /mercado\s*pago/i.test(metodoSel.nombre || "");
+  const esBanco = metodoSel && !esEfectivo && !esMercadoPago && metodoSel.tipo === "bank";
   const vuelto = esEfectivo && montoRecibido > total ? montoRecibido - total : 0;
   const qrTransferencia = esBanco && metodoSel?.cbu
     ? `TRANSFERENCIA\nTitular: ${metodoSel.titular || metodoSel.nombre}\nCBU/Alias: ${metodoSel.cbu}\nMonto: ${fmt.format(total)}`
@@ -186,6 +188,7 @@ export default function PuntoVenta() {
     if (!items.length) { setError("Agregá al menos un producto"); return; }
     setError(null);
     setRecibido("");
+    setOperacionPago("");
     if (!metodoSel && metodos.length) setMetodoSel(metodos.find((m) => m.tipo === "cash") || metodos[0]);
     setPantalla("cobro");
   };
@@ -204,9 +207,19 @@ export default function PuntoVenta() {
         confirmar: true,
         nota: "Venta creada desde Punto de Venta",
       };
-      if (conPago && metodoSel) payload.pago = { journal_id: metodoSel.id, amount: total, metodo: metodoSel.nombre };
+      if (conPago && metodoSel) {
+        if (esMercadoPago && !operacionPago.trim()) { setError("Ingresá el número de operación de Mercado Pago"); setCreando(false); return; }
+        payload.pago = { journal_id: metodoSel.id, amount: total, metodo: metodoSel.nombre, operacion: operacionPago.trim() };
+      }
       const res = await base44.functions.invoke("odoo", payload);
-      setResultado({ ...(res.data || {}), vuelto: conPago ? vuelto : 0 });
+      let pago_confirmado = false;
+      if (conPago && esMercadoPago && res.data?.pago_id && operacionPago.trim()) {
+        try {
+          const conf = await base44.functions.invoke("confirmarMercadoPago", { numero_operacion: operacionPago.trim(), odoo_payment_id: res.data.pago_id, monto: total });
+          pago_confirmado = !!conf.data?.approved;
+        } catch (_) {}
+      }
+      setResultado({ ...(res.data || {}), vuelto: conPago ? vuelto : 0, pago_confirmado });
       invalidateOdoo("ventas");
       invalidateOdoo("pedidos");
     } catch (e) {
@@ -223,6 +236,7 @@ export default function PuntoVenta() {
     setError(null);
     setPantalla("venta");
     setRecibido("");
+    setOperacionPago("");
   };
 
   if (cargando) {
@@ -247,6 +261,7 @@ export default function PuntoVenta() {
           {resultado.pago_id ? (
             <p className="rounded-lg bg-emerald-100 px-3 py-1.5 text-sm font-medium text-emerald-800">
               Cobrado con {resultado.pago_metodo || "método seleccionado"}
+              {resultado.pago_confirmado && <> · Mercado Pago aprobado</>}
               {resultado.vuelto > 0 && <> · Vuelto: <span className="font-bold">{fmt.format(resultado.vuelto)}</span></>}
             </p>
           ) : (
@@ -333,6 +348,20 @@ export default function PuntoVenta() {
                   Este método no tiene CBU/alias cargado en Odoo (Contabilidad → Diarios → cuenta bancaria). Podés cobrar igual, pero sin mostrar los datos ni el QR.
                 </p>
               )}
+            </div>
+          )}
+
+          {esMercadoPago && (
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              <label className="mb-2 block text-sm font-medium text-slate-700">Número de operación de Mercado Pago</label>
+              <input
+                value={operacionPago}
+                onChange={(e) => setOperacionPago(e.target.value.replace(/[^\d]/g, ""))}
+                inputMode="numeric"
+                placeholder="Ej: 1234567890"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-xl font-bold outline-none focus:border-emerald-400 focus:bg-white"
+              />
+              <p className="mt-2 text-xs text-slate-400">Al cobrar, el sistema consulta Mercado Pago y si está aprobado marca el pago como pagado en Odoo.</p>
             </div>
           )}
 

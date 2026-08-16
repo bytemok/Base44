@@ -34,6 +34,7 @@
         "Borrador",
         "Confirmada",
         "Se\u00f1ada",
+        "Pagada",
         "Cancelada"
       ],
       "default": "Confirmada"
@@ -56,6 +57,19 @@
     },
     "sena_payment_id": {
       "type": "number"
+    },
+    "mp_payment_id": {
+      "type": "number"
+    },
+    "mp_payment_status": {
+      "type": "string"
+    },
+    "mp_payment_status_detail": {
+      "type": "string"
+    },
+    "mp_confirmed_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "fecha": {
       "type": "string",

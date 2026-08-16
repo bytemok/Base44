@@ -23,6 +23,28 @@
     "payment_id": {
       "type": "number"
     },
+    "estado": {
+      "type": "string",
+      "enum": [
+        "Pendiente",
+        "Confirmada",
+        "Rechazada"
+      ],
+      "default": "Pendiente"
+    },
+    "mp_payment_id": {
+      "type": "number"
+    },
+    "mp_payment_status": {
+      "type": "string"
+    },
+    "mp_payment_status_detail": {
+      "type": "string"
+    },
+    "mp_confirmed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "fecha": {
       "type": "string",
       "format": "date"
